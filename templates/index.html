@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    /* CSS styles can be applied to divs for layout and styling */
+    .header {
+      background-color: #333;
+      color: #e8a413;
+      padding: 8px;
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+
+    }
+    .sidebar {
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+      font-size:12px;
+      float: left;
+      width: 20%;
+      background-color: #f2f2f2;
+      padding: 10px;
+
+    }
+    .content {
+      text-align:center;
+    }
+
+    .label {
+      display: inline-block; /* Display labels side by side */
+      width: 100px; /* Set a fixed width for the labels */
+      margin: 30px; /* Add margin to create space between labels */
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+    }
+
+    .footer {
+      clear: both;
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AlgoTrade</h1>
+  </div>
+
+  <div class="sidebar">
+    <h2>Dashboard</h2>
+        <h3>Select Mode</h3>
+    <label>
+      <input type="radio" name="radioOption" value="Simulator"> Simulation
+    </label>
+    <br>
+    <label>
+      <input type="radio" name="radioOption" value="Live"> Live
+    </label>
+
+     <h4></h4>
+    <button>connect</button>
+
+  </div>
+
+  <div class="content">
+    <span class="label" id = "Banknifty_id">BANKNIFTY:0</span>
+    <span class="label" id = "Nifty_id">NIFTY50:0</span>
+    <span class="label" id = "Finnifty_id">FINNIFTY:0</span>
+
+  </div>
+
+  <div class="footer">
+    &copy; 2023 AlgoTrade
+  </div>
+  <script>
+    function updateTickData() {
+      // Use JavaScript to fetch tick data and update the HTML elements
+      fetch('/update-tick-data')  // Make an API request to the server to fetch new tick data
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('Banknifty_id').textContent = `BANKNIFTY: ${data.banknifty}`;
+              document.getElementById('Nifty_id').textContent = `NIFTY50: ${data.nifty}`;
+              document.getElementById('Finnifty_id').textContent = `FINNIFTY: ${data.finnifty}`;
+          });
+    }
+
+    // Update the tick data every 5 seconds (adjust the interval as needed)
+    setInterval(updateTickData, 1000);
+  </script>
+</body>
+</html>
