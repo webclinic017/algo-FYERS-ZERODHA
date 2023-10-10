@@ -1,3 +1,4 @@
+plotly
 pandas_ta
 streamlit
 fyers_api
