@@ -1,6 +1,6 @@
 plotly
 pandas_ta
-streamlit
+flask
 fyers_api
 pandas
 numpy
