@@ -1,4 +1,4 @@
-TA-Lib
+pandas_ta
 streamlit
 fyers_api
 pandas
