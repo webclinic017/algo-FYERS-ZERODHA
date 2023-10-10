@@ -4,3 +4,4 @@ flask
 fyers_api
 pandas
 numpy
+gunicorn
