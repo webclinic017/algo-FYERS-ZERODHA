@@ -1,4 +1,4 @@
-xfrom flask import Flask, render_template,jsonify
+from flask import Flask, render_template,jsonify
 import numpy as np
 import random
 
