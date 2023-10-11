@@ -1,6 +1,11 @@
+
 <!DOCTYPE html>
 <html>
 <head>
+    <title>AlgoTrade</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
   <style>
     /* CSS styles can be applied to divs for layout and styling */
     .header {
@@ -17,24 +22,33 @@
       width: 20%;
       background-color: #f2f2f2;
       padding: 10px;
+      height: 150%; /* Set the height to 100% to expand it vertically */
+      overflow-y: auto; /
 
     }
     .content {
       text-align:center;
+
     }
 
     .label {
       display: inline-block; /* Display labels side by side */
       width: 100px; /* Set a fixed width for the labels */
-      margin: 30px; /* Add margin to create space between labels */
+      margin-left: 30px; /* Add margin to create space between labels */
       font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+    }
+    .strategy-result {
+      font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+      font-size:11px;
+      margin-left:24%
     }
 
     .footer {
+      margin-top:20px;
       clear: both;
       background-color: #333;
       color: #fff;
-      padding: 10px;
+      padding:10px;
     }
   </style>
 </head>
@@ -66,9 +80,51 @@
 
   </div>
 
+  <div class="strategy-result">
+      <h2>Strategy Result</h2>
+    <table border="1">
+        <tr>
+            <th>STRATEGY</th>
+            <th>STATUS</th>
+            <th>POSITION</th>
+            <th>MTM</th>
+        </tr>
+        <tr>
+            <td id="strategy_EMA">N/A</td>
+            <td id="status_EMA">N/A</td>
+            <td id="position_EMA">N/A</td>
+            <td id="mtm_EMA">N/A</td>
+        </tr>
+        <tr>
+            <td id="strategy_RSI">N/A</td>
+            <td id="status_RSI">N/A</td>
+            <td id="position_RSI">N/A</td>
+            <td id="mtm_RSI">N/A</td>
+        </tr>
+    </table>
+  </div>
   <div class="footer">
     &copy; 2023 AlgoTrade
   </div>
+  <script>
+    function fetchPosition() {
+        $.get('/update_positions', function (data) {
+            $('#strategy_EMA').text(data.STRATEGY_EMA);
+            $('#status_EMA').text(data.STATUS_EMA);
+            $('#position_EMA').text(data.POSITION_EMA);
+            $('#mtm_EMA').text(data.MTM_EMA);
+            $('#strategy_RSI').text(data.STRATEGY_RSI);
+            $('#status_RSI').text(data.STATUS_RSI);
+            $('#position_RSI').text(data.POSITION_RSI);
+            $('#mtm_RSI').text(data.MTM_RSI);
+
+
+        });
+    }
+
+    setInterval(fetchPosition, 1000);
+</script>
+
   <script>
     function updateTickData() {
       // Use JavaScript to fetch tick data and update the HTML elements
