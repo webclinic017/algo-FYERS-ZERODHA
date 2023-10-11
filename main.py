@@ -1,9 +1,8 @@
-from flask import Flask, render_template ,jsonify
+xfrom flask import Flask, render_template,jsonify
 import numpy as np
+import random
 
 app = Flask(__name__)
-
-
 
 @app.route('/')
 def home():
@@ -21,3 +20,25 @@ def update_tick_data():
     }
     return jsonify(updated_data)
 
+@app.route('/update_positions', methods=['GET'])
+def update_positions():
+    data = {
+        'STRATEGY_EMA': '3EMA',
+        'STATUS_EMA': 'LIVE',
+        'POSITION_EMA': 'OPEN',
+        'MTM_EMA': round(random.uniform(100, 200),2),
+        'STRATEGY_RSI': 'RSI',
+        'STATUS_RSI': 'OFFLINE',
+        'POSITION_RSI': 'CLOSED',
+        'MTM_RSI': round(random.uniform(100, 200), 2),
+
+    }
+
+
+    return jsonify(data)
+
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
