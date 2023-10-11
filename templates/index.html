@@ -40,7 +40,21 @@
     .strategy-result {
       font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
       font-size:11px;
-      margin-left:24%
+      float:left
+    }
+
+    .checkboxes{
+     margin-top:11px;
+     font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
+     font-size:11px;
+     float: right; /* Align the radio buttons to the right */
+     width: 20%;
+    }
+
+    /* Style for the radio buttons */
+    .checkboxes label {
+        display: block;
+
     }
 
     .footer {
@@ -102,6 +116,16 @@
             <td id="mtm_RSI">N/A</td>
         </tr>
     </table>
+  </div>
+  <div class="checkboxes">
+    <h2>Select Strategy</h2>
+    <label>
+      <input type="checkbox" name="strategyOption" value="EMA"> EMA
+    </label>
+    <label>
+      <input type="checkbox" name="strategyOption" value="RSI"> RSI
+    </label>
+    <!-- Add more radio buttons for each strategy you have -->
   </div>
   <div class="footer">
     &copy; 2023 AlgoTrade
