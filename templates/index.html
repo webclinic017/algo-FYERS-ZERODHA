@@ -26,6 +26,7 @@
       overflow-y: auto; /
 
     }
+
     .content {
       text-align:center;
 
@@ -56,6 +57,18 @@
         display: block;
 
     }
+
+     .date-selector {
+      margin-top: 50px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+    }
+
+    .download-button {
+        margin-top: 20px;
+        text-align:center;
+    }
+
 
     .footer {
       margin-top:20px;
@@ -127,6 +140,17 @@
     </label>
     <!-- Add more radio buttons for each strategy you have -->
   </div>
+   <div class="date-selector">
+        <label for="startDatePicker">Start Date:</label>
+        <input type="date" id="startDatePicker">
+        <label for="endDatePicker">End Date:</label>
+        <input type="date" id="endDatePicker">
+    </div>
+
+   <div class="download-button">
+        <button onclick="downloadCSV()">Download CSV</button>
+    </div>
+
   <div class="footer">
     &copy; 2023 AlgoTrade
   </div>
@@ -164,5 +188,25 @@
     // Update the tick data every 5 seconds (adjust the interval as needed)
     setInterval(updateTickData, 1000);
   </script>
+   <script>
+        // Your existing JavaScript code
+
+        // Function to download the CSV (you should define this function)
+        function downloadCSV() {
+            var startDate = document.getElementById("startDatePicker").value;
+            var endDate = document.getElementById("endDatePicker").value;
+             $.post('/get_csv', { start_date: startDate, end_date: endDate }, function(data) {
+                // Handle the CSV file or download it as needed
+                // For example, you can create a download link
+                var downloadLink = document.createElement('a');
+                downloadLink.href = 'data:text/csv;charset=utf-8,' + encodeURI(data);
+                downloadLink.target = '_blank';
+                downloadLink.download = 'filtered_data.csv';
+                downloadLink.click();
+            });
+
+            // Implement CSV download logic with selected date range
+        }
+    </script>
 </body>
 </html>
