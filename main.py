@@ -1,6 +1,9 @@
-from flask import Flask, render_template,jsonify
+import pandas as pd
+from flask import Flask, render_template,jsonify ,request ,send_file
 import numpy as np
 import random
+from database import post_position , request_position,append_position
+import io
 
 app = Flask(__name__)
 
@@ -36,6 +39,23 @@ def update_positions():
 
 
     return jsonify(data)
+
+@app.route('/get_csv', methods = ['POST'])
+def get_csv():
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    df = request_position()
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.index = df['Date']
+    mask = (df.index >= start_date) & (df.index <= end_date)
+    filtered_data = df.loc[mask]
+    csv_data = filtered_data.to_csv(index=False)
+    return send_file(
+        io.BytesIO(csv_data.encode('utf-8')),
+        as_attachment=True,
+        download_name='filtered_data.csv',
+        mimetype='text/csv'
+    )
 
 
 
