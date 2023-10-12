@@ -7,4 +7,5 @@ gunicorn
 websocket-client
 pyotp
 fyers-apiv3
+urllib3==1.26.17
 
