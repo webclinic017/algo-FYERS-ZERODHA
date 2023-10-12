@@ -1,7 +1,10 @@
 plotly
 pandas_ta
 flask
-fyers_api
 pandas
 numpy
 gunicorn
+websocket-client==1.2.1
+pyotp
+fyers-apiv3
+
