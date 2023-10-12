@@ -4,7 +4,7 @@ flask
 pandas
 numpy
 gunicorn
-websocket-client==1.2.1
+websocket-client
 pyotp
 fyers-apiv3
 
