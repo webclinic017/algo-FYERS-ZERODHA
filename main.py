@@ -4,6 +4,11 @@ import numpy as np
 import random
 from database import post_position , request_position,append_position
 import io
+from Broker_api import login , BROKER_WEBSOCKET_INT ,  get_ltp
+
+connected = 'not connected'
+BROKER_SOCKET  = None
+
 
 app = Flask(__name__)
 
@@ -12,15 +17,32 @@ def home():
     return render_template('index.html')
 
 
+@app.route('/on_connect', methods=['POST'])
+def connect():
+    global connected
+    global BROKER_SOCKET
+    login()
+    BROKER_SOCKET = BROKER_WEBSOCKET_INT()
+    BROKER_SOCKET.connect()
+    connected = 'connected'
+    return connected
+
+
 @app.route('/update-tick-data')
 def update_tick_data():
-    # Simulated function to fetch new tick data (replace with actual API calls)
-    # In this example, we simply return the same simulated data for demonstration purposes
-    updated_data = {
-        'banknifty': np.random.randint(35000,44500),
-        'nifty':  np.random.randint(18000,20000),
-        'finnifty':  np.random.randint(18000,19000),
-    }
+    ltp = get_ltp()
+    if ltp:
+        updated_data = {
+            'banknifty': ltp["NSE:NIFTYBANK-INDEX"],
+            'nifty':     ltp["NSE:NIFTY50-INDEX"],
+            'finnifty':  ltp['NSE:FINNIFTY-INDEX'],
+        }
+    else:
+        updated_data = {
+            'banknifty': 0,
+            'nifty': 0,
+            'finnifty': 0}
+
     return jsonify(updated_data)
 
 @app.route('/update_positions', methods=['GET'])
