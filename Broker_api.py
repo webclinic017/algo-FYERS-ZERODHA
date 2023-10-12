@@ -34,7 +34,7 @@ def login():
     global access_token
     global client_id
 
-    redirect_uri = 'https://0.0.0.0:8080/'
+    redirect_uri = "https://tradealgo.onrender.com/"
     client_id='IC8PF0KRVY-100'
     secret_key = 'KV1T805HV4'
     FY_ID = "XT00158"
