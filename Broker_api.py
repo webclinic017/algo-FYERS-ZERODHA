@@ -38,8 +38,8 @@ def login():
     client_id='IC8PF0KRVY-100'
     secret_key = 'KV1T805HV4'
     FY_ID = "XT00158"
-    TOTP_KEY = "RQ6MDX7WXSULGZRQT6JOTNVE3EW6P6RK"
-    PIN = "1234"
+    TOTP_KEY = "5MI36QR765HXYCG2JMW5OE5SGPEQUBLC"
+    PIN = "2005"
 
     URL_SEND_LOGIN_OTP = "https://api-t2.fyers.in/vagator/v2/send_login_otp_v2"
     res = requests.post(url=URL_SEND_LOGIN_OTP, json={"fy_id": getEncodedString(FY_ID), "app_id": "2"}).json()
