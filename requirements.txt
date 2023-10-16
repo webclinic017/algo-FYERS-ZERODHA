@@ -1,4 +1,4 @@
-plotly
+
 pandas_ta
 flask
 pandas
