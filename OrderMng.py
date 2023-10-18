@@ -97,7 +97,6 @@ class OrderMng():
         return success
 
     def update_server(self , Instrument , Qty):
-        print('reached')
         ABP = round(self.BuyValue[Instrument]/self.BuyQty[Instrument],2)
         ASP = round(self.SellValue[Instrument] / self.SellQty[Instrument], 2)
         MTM = round((ASP-ABP)*Qty)
