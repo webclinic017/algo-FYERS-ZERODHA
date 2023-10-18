@@ -79,9 +79,13 @@
     }
     #connectionStatus{color:green;}
 
+    .expiry{
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+      }
 
   </style>
-</head>
+
 <body>
   <div class="header">
     <h1>AlgoTrade</h1>
@@ -101,6 +105,7 @@
      <h4></h4>
     <button onclick="on_connect()">Connect</button>
         <div id="connectionStatus"></div>
+
   </div>
 
   <div class="content">
@@ -120,28 +125,23 @@
             <th>MTM</th>
         </tr>
         <tr>
-            <td id="strategy_EMA">N/A</td>
-            <td id="status_EMA">N/A</td>
-            <td id="position_EMA">N/A</td>
-            <td id="mtm_EMA">N/A</td>
+            <td id="strategy_3EMA">N/A</td>
+            <td id="status_3EMA">N/A</td>
+            <td id="position_3EMA">N/A</td>
+            <td id="mtm_3EMA">N/A</td>
         </tr>
-        <tr>
-            <td id="strategy_RSI">N/A</td>
-            <td id="status_RSI">N/A</td>
-            <td id="position_RSI">N/A</td>
-            <td id="mtm_RSI">N/A</td>
-        </tr>
+
     </table>
   </div>
   <div class="checkboxes">
     <h2>Select Strategy</h2>
-    <label>
-      <input type="checkbox" name="strategyOption" value="EMA"> EMA
-    </label>
-    <label>
-      <input type="checkbox" name="strategyOption" value="RSI"> RSI
-    </label>
-    <!-- Add more radio buttons for each strategy you have -->
+      <label>
+        <input type="checkbox" name="3EMA" value="3EMA" id="3EMA"> 3EMA
+      </label>
+      <label>
+        <input type="checkbox" name="RSI" value="RSI" id="RSI"> RSI
+      </label>
+      <!-- Add more checkboxes for each strategy you have -->
   </div>
    <div class="date-selector">
         <label for="startDatePicker">Start Date:</label>
@@ -152,7 +152,26 @@
 
    <div class="download-button">
         <button onclick="downloadCSV()">Download CSV</button>
-    </div>
+   </div>
+   <br>
+   <div class="expiry">
+    <span>
+        <label for="BankNifty_expiry">BANKNIFTY:</label>
+        <input type="text" id="BankNifty_expiry"  name=BankNifty_expiry placeholder="expiry">
+    </span>
+
+    <span>
+        <label for="Nifty50_expiry">NIFTY50:</label>
+        <input type="text" id="Nifty50_expiry"  name=Nifty50_expiry placeholder="expiry" >
+    </span>
+
+    <span>
+        <label for="FinNifty_expiry">FINNIFTY:</label>
+        <input type="text" id="FinNifty_expiry" name=FinNifty_expiry placeholder="expiry">
+    </span>
+   </div>
+
+
 
   <div class="footer">
     &copy; 2023 AlgoTrade
@@ -160,20 +179,15 @@
   <script>
     function fetchPosition() {
         $.get('/update_positions', function (data) {
-            $('#strategy_EMA').text(data.STRATEGY_EMA);
-            $('#status_EMA').text(data.STATUS_EMA);
-            $('#position_EMA').text(data.POSITION_EMA);
-            $('#mtm_EMA').text(data.MTM_EMA);
-            $('#strategy_RSI').text(data.STRATEGY_RSI);
-            $('#status_RSI').text(data.STATUS_RSI);
-            $('#position_RSI').text(data.POSITION_RSI);
-            $('#mtm_RSI').text(data.MTM_RSI);
-
+            $('#strategy_3EMA').text(data['3EMA'].STRATEGY_NAME);
+            $('#status_3EMA').text(data['3EMA'].STATUS);
+            $('#position_3EMA').text(data['3EMA'].POSITION);
+            $('#mtm_3EMA').text(data['3EMA'].MTM);
 
         });
     }
 
-<!--    setInterval(fetchPosition, 1000);-->
+    setInterval(fetchPosition, 1000);
 </script>
 
   <script>
@@ -215,9 +229,33 @@
     function on_connect() {
         const connectionStatus = document.getElementById('connectionStatus');
         connectionStatus.textContent = 'Connecting...'; // Display a message while connecting
+<!--    strategy selector-->
+        const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
+        const isRSISelected = document.querySelector('input[name="RSI"]').checked;
+<!--    expiry-->
+             const BANK_NIFTY_EXP = document.querySelector('input[name="BankNifty_expiry"]').value;
+        const NIFTY_EXP = document.querySelector('input[name="Nifty50_expiry"]').value;
+        const FIN_NIFTY_EXP = document.querySelector('input[name="FinNifty_expiry"]').value;
 
+        // Create the selected strategy and expiry objects
+        const STRATEGY_SELECTED = {
+            '3EMA': is3EMASelected,
+            'RSI': isRSISelected
+        };
+
+        const EXPIRY = {
+            'NSE:BANKNIFTY-INDEX': BANK_NIFTY_EXP,
+            'NSE:NIFTY50-INDEX': NIFTY_EXP,
+            'NSE:FINNIFTY-INDEX': FIN_NIFTY_EXP
+        };
+
+        // Make a POST request to /on_connect with the selected_strategy and expiry
         fetch('/on_connect', {
             method: 'POST',
+            body: JSON.stringify({
+                'selected_strategy': STRATEGY_SELECTED,
+                'expiry': EXPIRY
+            }),  headers: {'Content-Type': 'application/json',},
         })
         .then(response => response.text())
         .then(data => {
@@ -230,6 +268,16 @@
             connectionStatus.textContent = 'Connection failed';
         });
     }
+</script>
+<script>
+        function setInitialConnectionStatus() {
+        $.get('/get_connection_status', function (data) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            connectionStatus.textContent = data;
+        });
+    }
+
+ setInitialConnectionStatus();
 </script>
 </body>
 </html>
