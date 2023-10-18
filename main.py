@@ -5,12 +5,14 @@ import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
 from strategy import StrategyFactory
+import requests
 
 connected = 'not connected'
 BROKER_APP = False
 STRATEGY_FAC = {}
 STRATEGY = {}
 SELECTED_STRATEGY = {}
+wake_up_url  ='https://algotrade.pythonanywhere.com/wake_up'
 
 app = Flask(__name__)
 
@@ -55,6 +57,8 @@ def connect():
 
     BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
+
+    requests.get(wake_up_url)
 
     connected = 'connected'
     return connected
