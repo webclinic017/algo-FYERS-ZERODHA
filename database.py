@@ -14,32 +14,27 @@ def request_position():
 
 
 
-def append_position():
+def append_position(Date ,entrytime  ,exittime, Strategy , Transtype ,Instrument , ABP , ASP ,Qty , BuyValue , SellValue, MTM):
     global PositionBook
-    trade_detail = {'Date': '2023-08-03 15:15:29',
-            'Strategy': '3EMA',
-            'Index': 'BANKNIFTY',
-            'Instrument': 'BANKNIFTY10AUG23C44500',
-            'ABP': '470',
-            'ASP': '500',
-            'Qty': '100',
-            'MTM': '24500',
-            'CumulativeMTM': '24500'}
+    trade_detail = {'Date': Date,
+            'entrytime':entrytime,
+            'exittime':exittime,
+            'Strategy': Strategy,
+            'Transtype': Transtype,
+            'Instrument': Instrument,
+            'ABP': ABP,
+            'ASP': ASP,
+            'Qty': Qty,
+            'AverageBuyValue':BuyValue,
+            'AverageSellValue':SellValue,
+            'MTM': MTM
+             }
 
-    temp = pd.DataFrame.from_dict([trade_detail])
-    PositionBook = pd.concat([PositionBook,temp],axis=0)
-
+    PositionBook = pd.DataFrame.from_dict([trade_detail])
+    PositionBook.to_csv('PositionBook')
 
 def post_position():
     url = 'https://algotrade.pythonanywhere.com/append_position'
     global PositionBook
     payload = PositionBook.to_json(orient='records')
     response = requests.post(url, json=payload)
-
-
-
-
-
-
-
-
