@@ -86,6 +86,7 @@ class StrategyFactory:
                 self.indicator_val[f'ema_{n}'] = ta.ema(self.ticker_space['close'], n)
 
     def long_signal(self):
+        self.signal = 0
         if self.trade_flag:
             if self.strategy_name == '3EMA':
                 if (self.indicator_val['ema_2'].iloc[-1] > self.indicator_val['ema_5'].iloc[-1]):
@@ -94,6 +95,7 @@ class StrategyFactory:
         return self.signal
 
     def short_signal(self):
+        self.signal=0
         if self.trade_flag:
             if self.strategy_name=='3EMA':
                 if (self.indicator_val['ema_2'].iloc[-1] < self.indicator_val['ema_5'].iloc[-1]):
@@ -105,7 +107,7 @@ class StrategyFactory:
         # updating ticker space
         self.ticker_space = ticker_space[f'{self.symbol}_{self.interval}'].iloc[:-1]
         self.cal_indicator_val()
-        if not self.position and not self.ticker_space.empty:
+        if not self.position:
             if self.long_signal() or self.short_signal():
                 self.t1 = self.scheduler.every(4).seconds.do(self.Open_position)
 
@@ -121,6 +123,7 @@ class StrategyFactory:
                 if self.position > 0:
                     if self.short_signal():
                         self.squaring_of_all_position_AT_ONCE()
+
                 elif self.position < 0:
                     if self.long_signal():
                         self.squaring_of_all_position_AT_ONCE()
