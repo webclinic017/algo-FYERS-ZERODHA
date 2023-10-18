@@ -1,14 +1,16 @@
 import pandas as pd
 from flask import Flask, render_template,jsonify ,request ,send_file
-import numpy as np
-import random
-from database import post_position , request_position,append_position
+from database import request_position
 import io
-from Broker_api import login , BROKER_WEBSOCKET_INT ,  get_ltp
+from Broker_api import BROKER_API
+from TICKER import TICKER_
+from strategy import StrategyFactory
 
 connected = 'not connected'
-BROKER_SOCKET  = None
-
+BROKER_APP = False
+STRATEGY_FAC = {}
+STRATEGY = {}
+SELECTED_STRATEGY = {}
 
 app = Flask(__name__)
 
@@ -19,23 +21,56 @@ def home():
 
 @app.route('/on_connect', methods=['POST'])
 def connect():
+    global STRATEGY
     global connected
-    global BROKER_SOCKET
-    login()
-    BROKER_SOCKET = BROKER_WEBSOCKET_INT()
-    BROKER_SOCKET.connect()
+    global BROKER_APP
+    global STRATEGY_FAC
+    global SELECTED_STRATEGY
+
+    # creating a broker object  after login
+    BROKER_APP = BROKER_API()
+    BROKER_APP.login()
+    BROKER_APP.BROKER_WEBSOCKET_INT()
+
+    # TICKER and interval  used  in strategies
+    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1}
+    TICKER_.BROKER_OBJ = BROKER_APP.BROKER_APP
+    TICK = TICKER_(TICKER_UNDER_STRATEGY)
+    BROKER_API.TICKER_OBJ = TICK
+
+    # setting and creating strategy obj
+    StrategyFactory.TICKER_OBJ = TICK
+    StrategyFactory.LIVE_FEED = BROKER_APP
+
+    # selecting strategy which is selected with checkbox
+    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1}}
+    json = request.get_json()
+    SELECTED_STRATEGY = json['selected_strategy']
+
+
+    for key, value in STRATEGY.items():
+        if SELECTED_STRATEGY[key]:
+            STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
+            value['ticker'], value['interval'] ,expiry=json['expiry'][value['ticker']])
+
+    BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
+    TICKER_.STRATEGY_RUN = STRATEGY_FAC
+
     connected = 'connected'
     return connected
 
 
 @app.route('/update-tick-data')
 def update_tick_data():
-    ltp = get_ltp()
-    if ltp:
+    global BROKER_APP
+
+    ticker = ["NSE:NIFTYBANK-INDEX" , "NSE:NIFTY50-INDEX" ,'NSE:FINNIFTY-INDEX' ]
+
+    if BROKER_APP and all([s in BROKER_APP.ltp.keys() for s in ticker]):
         updated_data = {
-            'banknifty': ltp["NSE:NIFTYBANK-INDEX"],
-            'nifty':     ltp["NSE:NIFTY50-INDEX"],
-            'finnifty':  ltp['NSE:FINNIFTY-INDEX'],
+            'banknifty': BROKER_APP.ltp["NSE:NIFTYBANK-INDEX"],
+            'nifty':     BROKER_APP.ltp["NSE:NIFTY50-INDEX"],
+            'finnifty':  BROKER_APP.ltp['NSE:FINNIFTY-INDEX'],
         }
     else:
         updated_data = {
@@ -47,20 +82,27 @@ def update_tick_data():
 
 @app.route('/update_positions', methods=['GET'])
 def update_positions():
-    data = {
-        'STRATEGY_EMA': '3EMA',
-        'STATUS_EMA': 'LIVE',
-        'POSITION_EMA': 'OPEN',
-        'MTM_EMA': round(random.uniform(100, 200),2),
-        'STRATEGY_RSI': 'RSI',
-        'STATUS_RSI': 'OFFLINE',
-        'POSITION_RSI': 'CLOSED',
-        'MTM_RSI': round(random.uniform(100, 200), 2),
+    json = {}
+    global STRATEGY_FAC
+    global STRATEGY
+    global SELECTED_STRATEGY
+    POSITION = 0
 
-    }
+    for strategy in STRATEGY.keys():
+        if STRATEGY_FAC:
+            value = round(STRATEGY_FAC[strategy].STR_MTM, 2)
+            POSITION  = STRATEGY_FAC[strategy].position
+        else:
+            value = 0
+        json[strategy] = {
+        'STRATEGY_NAME': strategy,
+        'STATUS': 'LIVE' if SELECTED_STRATEGY[strategy] else 'OFFLINE',
+        'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
+        'MTM': value,
+        }
 
+    return jsonify(json)
 
-    return jsonify(data)
 
 @app.route('/get_csv', methods = ['POST'])
 def get_csv():
@@ -78,7 +120,9 @@ def get_csv():
         download_name='filtered_data.csv',
         mimetype='text/csv'
     )
-
+@app.route('/get_connection_status')
+def get_connection_status():
+    return connected
 
 
 
