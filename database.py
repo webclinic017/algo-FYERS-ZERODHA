@@ -31,7 +31,7 @@ def append_position(Date ,entrytime  ,exittime, Strategy , Transtype ,Instrument
              }
 
     PositionBook = pd.DataFrame.from_dict([trade_detail])
-    PositionBook.to_csv('PositionBook')
+
 
 def post_position():
     url = 'https://algotrade.pythonanywhere.com/append_position'
