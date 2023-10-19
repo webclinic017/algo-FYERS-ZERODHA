@@ -5,7 +5,7 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 import pandas_ta as ta
-
+import pytz
 
 class StrategyFactory:
     TICKER_OBJ = None
@@ -22,6 +22,7 @@ class StrategyFactory:
             'BANKNIFTY' if symbol == 'NSE:BANKNIFTY_INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
+        self.time_zone = pytz.timezone('Asia/kolkata')
         self.position = 0
         self.signal = 0
         self.trade_flag = True
@@ -32,6 +33,7 @@ class StrategyFactory:
         self.scheduler = schedule.Scheduler()
         self.t1 = None
         self.indicator_val = {}
+
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
@@ -128,15 +130,12 @@ class StrategyFactory:
                     if self.long_signal():
                         self.squaring_of_all_position_AT_ONCE()
 
-            # different strategy may have different exit rule ,in that case different function will be executed
-            if not self.position:
-                self.refresh_var()
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
 
         if self.position and self.trade_flag:
-            if datetime.now().time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
+            if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
                 self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
 
@@ -158,6 +157,7 @@ class StrategyFactory:
 
         if success:
             self.position = 0
+            self.refresh_var()
 
 
     def average_position(self):
