@@ -43,7 +43,6 @@ class TICKER_():
             for interval in self.ticker_under_strategy.values():
                 if now.minute % interval == 0 and now.second > 5 and now.second < 8:
                     self.scheduler.every(interval).minutes.do(self.run_update)
-                    print(f'task scheduled :{self.scheduler.jobs}')
 
 
         self.scheduler.run_pending()
