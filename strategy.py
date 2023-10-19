@@ -50,6 +50,7 @@ class StrategyFactory:
 
     def Open_position(self):
 
+
         if not self.instrument_under_strategy:
             self.param = {}
             for key, value in OrderParam(self.strategy_name, self.signal).items():
@@ -63,9 +64,10 @@ class StrategyFactory:
         # checking the  feed has been started for all instruments subscribe above then taking position
 
         if all([s in self.LIVE_FEED.ltp.keys() for s in self.instrument_under_strategy]):
-            for instrument in self.instrument_under_strategy:
-                self.OrderManger.Add_position(**self.param[instrument])
+            if all([self.OrderManger.Add_position(**self.param[instrument]) for instrument in self.instrument_under_strategy]):
                 self.position = self.signal
+            else:
+                print('Unable to place order please check with broker terminal')
 
             # once the order is placed , this function will be de-scheduled
             self.scheduler.cancel_job(self.t1)
@@ -77,7 +79,7 @@ class StrategyFactory:
 
         # checking the scheduled task
         self.scheduler.run_pending()
-        self.Exit_position_on_real_time()
+        # self.Exit_position_on_real_time()
 
 
 
@@ -168,7 +170,7 @@ class StrategyFactory:
 
     def refresh_var(self):
         # updating mtm after order placement
-        self.STR_MTM = sum(self.OrderManger.MTM.values())
+        self.STR_MTM = self.OrderManger.CumMtm
 
         # removing instrument from ltp dictionary
         for s in self.instrument_under_strategy:
