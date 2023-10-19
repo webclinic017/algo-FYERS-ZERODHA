@@ -1,5 +1,5 @@
 import pandas as pd
-from flask import Flask, render_template,jsonify ,request ,send_file
+from flask import Flask, render_template,jsonify,request,send_file
 from database import request_position
 import io
 from Broker_api import BROKER_API
@@ -68,7 +68,7 @@ def connect():
 def update_tick_data():
     global BROKER_APP
 
-    ticker = ["NSE:NIFTYBANK-INDEX" , "NSE:NIFTY50-INDEX" ,'NSE:FINNIFTY-INDEX' ]
+    ticker = ["NSE:NIFTYBANK-INDEX","NSE:NIFTY50-INDEX",'NSE:FINNIFTY-INDEX']
 
     if BROKER_APP and all([s in BROKER_APP.ltp.keys() for s in ticker]):
         updated_data = {
@@ -108,16 +108,27 @@ def update_positions():
     return jsonify(json)
 
 
-@app.route('/get_csv', methods = ['POST'])
+@app.route('/get_csv', methods=['POST'])
 def get_csv():
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
     df = request_position()
+
+    # Convert the 'Date' column to datetime
     df['Date'] = pd.to_datetime(df['Date'])
-    df.index = df['Date']
-    mask = (df.index >= start_date) & (df.index <= end_date)
-    filtered_data = df.loc[mask]
+
+    # Filter the data based on the date range
+    mask = (df['Date'] >= start_date) & (df['Date'] <= end_date)
+    filtered_data = df[mask]
+
+    # Format the 'entrytime' and 'exittime' columns to include milliseconds
+    filtered_data['entrytime'] = pd.to_datetime(filtered_data['entrytime']).dt.strftime('%H:%M:%S')
+    filtered_data['exittime'] = pd.to_datetime(filtered_data['exittime']).dt.strftime('%H:%M:%S')
+
+    # Generate the CSV
     csv_data = filtered_data.to_csv(index=False)
+
+    # Return the CSV as an attachment
     return send_file(
         io.BytesIO(csv_data.encode('utf-8')),
         as_attachment=True,
@@ -128,6 +139,19 @@ def get_csv():
 def get_connection_status():
     return connected
 
+@app.route('/Square_off_Position' ,methods  = ['POST'])
+def Sqaure_off_Position():
+    resp = 'POSITION NOT AVAILABLE'
+    global STRATEGY_FAC
+    selected_str = request.form.get('Square_off_strategy')
+    if selected_str in STRATEGY_FAC.keys():
+        if STRATEGY_FAC[selected_str].position:
+            STRATEGY_FAC[selected_str].squaring_of_all_position_AT_ONCE()
+            if not STRATEGY_FAC[selected_str].position:
+                resp = 'success'
+            else:
+                resp = 'Failed'
+    return resp
 
 
 if __name__ == '__main__':
