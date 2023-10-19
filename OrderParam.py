@@ -7,12 +7,12 @@ def OrderParam(strategy_name ,signal):
     if strategy_name=='3EMA':
         # directional option selling strategy when upside movement is expected
         if signal==1:
-            p1 ={'opt':'CE', 'step':0,'transtype':'BUY','Qty':50}
-            p2 ={'opt': 'PE', 'step': 0, 'transtype': 'SELL','Qty': 50}
+            p1 ={'opt':'CE', 'step':5,'transtype':'BUY','Qty':100}
+            p2 ={'opt': 'PE', 'step': 3, 'transtype': 'SELL','Qty': 100}
             OrderPar = {'p1':p1,'p2':p2}
         elif signal==-1:
-            p1 = {'opt': 'CE', 'step': 0, 'transtype': 'SELL', 'Qty': 50}
-            p2 = {'opt': 'PE', 'step': 0, 'transtype': 'BUY', 'Qty': 50}
+            p1 = {'opt': 'CE', 'step': 3, 'transtype': 'SELL', 'Qty': 100}
+            p2 = {'opt': 'PE', 'step': 5, 'transtype': 'BUY', 'Qty': 100}
             OrderPar = {'p1': p2, 'p2': p1}
 
     elif strategy_name=='RSI':
