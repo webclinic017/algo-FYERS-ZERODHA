@@ -1,12 +1,13 @@
 from fyers_apiv3 import fyersModel
 from fyers_apiv3.FyersWebsocket import data_ws
 from datetime import datetime
-from  time import sleep
+from time import sleep
 import os
 import pyotp
 import requests
 from urllib.parse import parse_qs,urlparse
 import base64
+import pytz
 
 
 def getEncodedString(string):
@@ -20,12 +21,13 @@ class BROKER_API():
     TICKER_OBJ = None
     STRATEGY_RUN = None
     ltp = {}
-    def __int__(self):
-            self.BROKER_APP = None
-            self.BROKER_SOCKET = None
-            self.access_token = None
-            self.client_id = None
-
+    def __init__(self):
+        self.BROKER_APP = None
+        self.BROKER_SOCKET = None
+        self.access_token = None
+        self.client_id = None
+        self.time_zone = pytz.timezone('Asia/kolkata')
+        self.delete_log()
 
     def login(self):
 
@@ -38,7 +40,7 @@ class BROKER_API():
 
         URL_SEND_LOGIN_OTP = "https://api-t2.fyers.in/vagator/v2/send_login_otp_v2"
         res = requests.post(url=URL_SEND_LOGIN_OTP, json={"fy_id": getEncodedString(FY_ID), "app_id": "2"}).json()
-        if datetime.now().second % 30 > 27: sleep(5)
+        if datetime.now(self.time_zone).second % 30 > 27: sleep(5)
         URL_VERIFY_OTP = "https://api-t2.fyers.in/vagator/v2/verify_otp"
         res2 = requests.post(url=URL_VERIFY_OTP,
                          json={"request_key": res["request_key"], "otp": pyotp.TOTP(TOTP_KEY).now()}).json()
@@ -143,3 +145,14 @@ class BROKER_API():
 
         except KeyError:
             return 0
+
+    def delete_log(self):
+        files = ['fyersApi.log', 'fyersDataSocket.log']
+        for file_name in files:
+            if os.path.exists(file_name):
+                try:
+                    os.remove(file_name)
+                except Exception as e:
+                    print(f'Error deleting log file {e}')
+            else:
+                pass
