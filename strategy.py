@@ -167,6 +167,8 @@ class StrategyFactory:
             pass
 
     def refresh_var(self):
+        # updating mtm after order placement
+        self.STR_MTM = sum(self.OrderManger.MTM.values())
 
         # removing instrument from ltp dictionary
         for s in self.instrument_under_strategy:
