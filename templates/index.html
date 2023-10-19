@@ -17,13 +17,11 @@
     }
     .sidebar {
       font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
-      font-size:12px;
+      font-size:15px;
       float: left;
       width: 20%;
       background-color: #f2f2f2;
-      padding: 10px;
-      height: 150%; /* Set the height to 100% to expand it vertically */
-      overflow-y: auto; /
+      padding: 50px;
 
     }
 
@@ -40,8 +38,8 @@
     }
     .strategy-result {
       font-family: 'Comic Sans MS', cursive, sans-serif; /* Change the font family to Comic Sans MS with fallbacks */
-      font-size:11px;
-      float:left
+      font-size:12px;
+      float:left;
     }
 
     .checkboxes{
@@ -83,6 +81,12 @@
       font-family: 'Comic Sans MS', cursive, sans-serif;
       text-align:center;
       }
+    .Square_off_strategy{
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align:center;
+      padding:8px;
+    }
+
 
   </style>
 
@@ -170,7 +174,19 @@
         <input type="text" id="FinNifty_expiry" name=FinNifty_expiry placeholder="expiry">
     </span>
    </div>
+  <br>
 
+  <br>
+  <div class="Square_off_strategy">
+    <form method="POST" action="/Square_off_Position">
+        <label for=Square_off_strategy>Select Strategy:</label>
+        <select name="Square_off_strategy" id="Square_off_strategy">
+            <option value="3EMA">3 EMA</option>
+            <option value="RSI">RSI</option>
+        </select>
+        <button type="submit">SQUARE-OFF</button>
+    </form>
+   </div>
 
 
   <div class="footer">
