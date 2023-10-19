@@ -95,7 +95,7 @@ class OrderMng():
 
         if success:
             self.exit_time[Instrument] = datetime.now(self.time_zone).time()
-            self.MTM[Instrument] = -self.nav[Instrument]
+            self.MTM[Instrument]+=(-self.nav[Instrument])
             if self.mode=='Simulator':
                 self.update_server(Instrument , Qty)
 
