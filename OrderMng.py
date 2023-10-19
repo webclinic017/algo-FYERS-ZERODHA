@@ -92,8 +92,10 @@ class OrderMng():
             self.net_qty[Instrument]+= Qty
             self.nav[Instrument]+=(price * Qty)
 
+
         if success:
             self.exit_time[Instrument] = datetime.now(self.time_zone).time()
+            self.MTM[Instrument] = -self.nav[Instrument]
             if self.mode=='Simulator':
                 self.update_server(Instrument , Qty)
 
@@ -105,6 +107,8 @@ class OrderMng():
         MTM = round((ASP-ABP)*Qty)
         BuyValue = ABP*Qty
         SellValue = ASP*Qty
+        # updating dictionary after placing order
+
 
         append_position(datetime.today().date(),
                         self.entry_time[Instrument],
