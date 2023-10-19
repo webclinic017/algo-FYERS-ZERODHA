@@ -6,6 +6,8 @@ from Broker_api import BROKER_API
 from TICKER import TICKER_
 from strategy import StrategyFactory
 import requests
+import warnings as ws
+ws.simplefilter('ignore')
 
 connected = 'not connected'
 BROKER_APP = False
