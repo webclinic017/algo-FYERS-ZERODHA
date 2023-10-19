@@ -1,6 +1,7 @@
 from datetime import datetime
-from database import append_position , post_position
+from database import append_position,post_position
 import pytz
+
 
 class OrderMng():
     LIVE_FEED = None
@@ -15,6 +16,7 @@ class OrderMng():
         self.BuyQty = {}
         self.SellQty = {}
         self.MTM = {}
+        self.CumMtm = 0
         self.Transtype = {}
         self.entry_time ={}
         self.exit_time = {}
@@ -22,9 +24,9 @@ class OrderMng():
 
     def Live_MTM(self):
         for instrument in self.nav.keys():
-            self.MTM[instrument] = self.LIVE_FEED.get_ltp(instrument)*self.net_qty[instrument]-self.nav[instrument]
-
-        return sum(self.MTM.values())
+            if self.net_qty[instrument]:
+                self.MTM[instrument] = self.LIVE_FEED.get_ltp(instrument)*self.net_qty[instrument]-self.nav[instrument]
+        return self.CumMtm+sum(self.MTM.values())
 
     def Add_position(self ,Instrument,Transtype,Qty):
          price = 0
@@ -69,7 +71,10 @@ class OrderMng():
             self.Transtype[Instrument] = Transtype
 
          if success:
-              self.entry_time[Instrument]  = datetime.now(self.time_zone).time()
+            self.entry_time[Instrument]  = datetime.now(self.time_zone).time()
+
+
+         return success
 
     def close_position(self, Instrument,Qty):
 
@@ -95,7 +100,9 @@ class OrderMng():
 
         if success:
             self.exit_time[Instrument] = datetime.now(self.time_zone).time()
-            self.MTM[Instrument]+=(-self.nav[Instrument])
+            self.CumMtm+=(-self.nav[Instrument])
+            self.MTM.pop(Instrument, None)
+
             if self.mode=='Simulator':
                 self.update_server(Instrument , Qty)
 
@@ -107,7 +114,6 @@ class OrderMng():
         MTM = round((ASP-ABP)*Qty)
         BuyValue = ABP*Qty
         SellValue = ASP*Qty
-        # updating dictionary after placing order
 
 
         append_position(datetime.today().date(),
