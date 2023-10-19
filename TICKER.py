@@ -1,19 +1,23 @@
-from datetime import datetime , timedelta
+from datetime import datetime,timedelta
 import pandas as pd
+import pytz
 import schedule
+
 
 class TICKER_():
     BROKER_OBJ = None
     STRATEGY_RUN = None
 
-    def __init__(self , ticker):
+    def __init__(self, ticker):
         self.ticker_under_strategy = ticker
+        self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
         self.scheduler = schedule.Scheduler()
-        self.update_tag=False
+        self.update_tag = False
+
 
     def get_history(self ,symbol, interval, days = 4 ):
-        range_to = datetime.now().date()
+        range_to = datetime.now(self.time_zone).date()
         range_from = range_to - timedelta(days=days)
         req = {"symbol": symbol, "resolution": f"{interval}", "date_format": "1", "range_from": str(range_from),
                "range_to": str(range_to), "cont_flag": "1"}
@@ -35,7 +39,7 @@ class TICKER_():
 
     def run_scheduler(self):
         if not self.scheduler.jobs:
-            now = datetime.now()
+            now = datetime.now(self.time_zone)
             for interval in self.ticker_under_strategy.values():
                 if now.minute % interval == 0 and now.second > 5 and now.second < 8:
                     self.scheduler.every(interval).minutes.do(self.run_update)
