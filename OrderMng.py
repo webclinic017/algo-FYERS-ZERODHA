@@ -1,11 +1,13 @@
 from datetime import datetime
 from database import append_position , post_position
+import pytz
 
 class OrderMng():
     LIVE_FEED = None
     def __init__(self , mode , name):
         self.mode = mode
         self.strategy_name = name
+        self.time_zone = pytz.timezone('Asia/kolkata')
         self.nav = {}
         self.net_qty = {}
         self.BuyValue = {}
@@ -16,6 +18,7 @@ class OrderMng():
         self.Transtype = {}
         self.entry_time ={}
         self.exit_time = {}
+
 
     def Live_MTM(self):
         for instrument in self.nav.keys():
@@ -66,7 +69,7 @@ class OrderMng():
             self.Transtype[Instrument] = Transtype
 
          if success:
-              self.entry_time[Instrument]  = datetime.now().time()
+              self.entry_time[Instrument]  = datetime.now(self.time_zone).time()
 
     def close_position(self, Instrument,Qty):
 
@@ -90,7 +93,7 @@ class OrderMng():
             self.nav[Instrument]+=(price * Qty)
 
         if success:
-            self.exit_time[Instrument] = datetime.now().time()
+            self.exit_time[Instrument] = datetime.now(self.time_zone).time()
             if self.mode=='Simulator':
                 self.update_server(Instrument , Qty)
 
