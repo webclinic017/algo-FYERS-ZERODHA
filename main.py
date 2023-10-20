@@ -109,7 +109,7 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
-    scheduler.run_pending()
+   
 
     return jsonify(json)
 
