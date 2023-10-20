@@ -15,7 +15,6 @@ BROKER_APP = False
 STRATEGY_FAC = {}
 STRATEGY = {}
 SELECTED_STRATEGY = {}
-wake_up_url  = 'https://tradealgo.onrender.com'
 scheduler = schedule.Scheduler()
 
 
@@ -66,7 +65,7 @@ def connect():
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
 
     scheduler.every(10).minutes.do(ping_server)
-    print(f'task scheduled:{scheduler.jobs}'
+    print(f'task scheduled:{scheduler.jobs}')
     connected = 'connected'
     return connected
 
@@ -163,7 +162,7 @@ def Sqaure_off_Position():
     return resp
 
 def ping_server():
-    global wake_up_url
+    wake_up_url  = 'https://tradealgo.onrender.com'
     requests.get(wake_up_url)
 
 if __name__ == '__main__':
