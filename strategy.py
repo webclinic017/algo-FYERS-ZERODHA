@@ -79,21 +79,33 @@ class StrategyFactory:
 
         # checking the scheduled task
         self.scheduler.run_pending()
-        # self.Exit_position_on_real_time()
+        self.Exit_position_on_real_time()
 
 
 
     def cal_indicator_val(self):
         if self.strategy_name == '3EMA':
             #  calculating ema
-            for n in [2, 5]:
-                self.indicator_val[f'ema_{n}'] = ta.ema(self.ticker_space['close'], n)
+            for n in [5, 21, 54 , 16]:
+                if n!=16:
+                    self.indicator_val[f'ema_{n}'] = ta.ema(self.ticker_space['close'], n)
+                else:
+                    self.indicator_val[f'rsi_{n}'] = ta.rsi(self.ticker_space['close'],n)
+
+            self.indicator_val['spr'] = self.indicator_val['ema_21']/self.indicator_val['ema_54']
 
     def long_signal(self):
         self.signal = 0
         if self.trade_flag:
             if self.strategy_name == '3EMA':
-                if (self.indicator_val['ema_2'].iloc[-1] > self.indicator_val['ema_5'].iloc[-1]):
+                cond1 = self.indicator_val['ema_5'].iloc[-1]>self.indicator_val['ema_21'].iloc[-1]
+                cond2 = self.indicator_val['ema_21'].iloc[-1] > self.indicator_val['ema_54'].iloc[-1]
+                cond3 = (self.indicator_val['rsi_16'].iloc[-1]>60) & (self.indicator_val['spr'].iloc[-1]>(1+0.03/100))
+                cond4 = ((self.indicator_val['ema_5'].iloc[-1]>self.ticker_space['close'].iloc[-2]) &
+                         (self.indicator_val['ema_5'].iloc[-1]<self.ticker_space['close'].iloc[-1]))
+                cond5 = self.ticker_space['open'].iloc[-1]<self.ticker_space['close'].iloc[-1]
+
+                if all([cond1,cond2,cond3,cond4,cond5]):
                     self.signal = 1
 
         return self.signal
@@ -102,8 +114,10 @@ class StrategyFactory:
         self.signal=0
         if self.trade_flag:
             if self.strategy_name=='3EMA':
-                if (self.indicator_val['ema_2'].iloc[-1] < self.indicator_val['ema_5'].iloc[-1]):
+                if (self.ticker_space['close'].iloc[-1] < self.indicator_val['ema_54'].iloc[-1]):
                     self.signal = -1
+                elif self.indicator_val['rsi_16'].iloc[-1]<40:
+                    self.signal =-1
 
         return self.signal
 
@@ -112,7 +126,7 @@ class StrategyFactory:
         self.ticker_space = ticker_space[f'{self.symbol}_{self.interval}'].iloc[:-1]
         self.cal_indicator_val()
         if not self.position:
-            if self.long_signal() or self.short_signal():
+            if self.long_signal():
                 self.t1 = self.scheduler.every(4).seconds.do(self.Open_position)
 
         if self.position:
@@ -126,10 +140,6 @@ class StrategyFactory:
                 # write exit condition here
                 if self.position > 0:
                     if self.short_signal():
-                        self.squaring_of_all_position_AT_ONCE()
-
-                elif self.position < 0:
-                    if self.long_signal():
                         self.squaring_of_all_position_AT_ONCE()
 
 
