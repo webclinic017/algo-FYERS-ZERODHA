@@ -19,6 +19,7 @@ wake_up_url  = 'https://tradealgo.onrender.com'
 scheduler = schedule.Scheduler()
 
 
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -65,6 +66,7 @@ def connect():
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
 
     scheduler.every(10).minutes.do(ping_server)
+    print(f'task scheduled:{scheduler.jobs}'
     connected = 'connected'
     return connected
 
