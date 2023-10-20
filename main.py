@@ -1,11 +1,12 @@
 import pandas as pd
+import requests
 from flask import Flask, render_template,jsonify,request,send_file
 from database import request_position
 import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
 from strategy import StrategyFactory
-import requests
+import schedule
 import warnings as ws
 ws.simplefilter('ignore')
 
@@ -14,7 +15,9 @@ BROKER_APP = False
 STRATEGY_FAC = {}
 STRATEGY = {}
 SELECTED_STRATEGY = {}
-wake_up_url  ='https://algotrade.pythonanywhere.com/wake_up'
+wake_up_url  = 'https://tradealgo.onrender.com'
+scheduler = schedule.Scheduler()
+
 
 app = Flask(__name__)
 
@@ -30,6 +33,7 @@ def connect():
     global BROKER_APP
     global STRATEGY_FAC
     global SELECTED_STRATEGY
+    global scheduler
 
     # creating a broker object  after login
     BROKER_APP = BROKER_API()
@@ -37,7 +41,7 @@ def connect():
     BROKER_APP.BROKER_WEBSOCKET_INT()
 
     # TICKER and interval  used  in strategies
-    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1}
+    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5}
     TICKER_.BROKER_OBJ = BROKER_APP.BROKER_APP
     TICK = TICKER_(TICKER_UNDER_STRATEGY)
     BROKER_API.TICKER_OBJ = TICK
@@ -47,7 +51,7 @@ def connect():
     StrategyFactory.LIVE_FEED = BROKER_APP
 
     # selecting strategy which is selected with checkbox
-    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1}}
+    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5}}
     json = request.get_json()
     SELECTED_STRATEGY = json['selected_strategy']
 
@@ -60,8 +64,7 @@ def connect():
     BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
 
-    requests.get(wake_up_url)
-
+    scheduler.every(10).minutes.do(ping_server)
     connected = 'connected'
     return connected
 
@@ -92,6 +95,7 @@ def update_positions():
     global STRATEGY_FAC
     global STRATEGY
     global SELECTED_STRATEGY
+    global scheduler
     POSITION = 0
 
     for strategy in STRATEGY.keys():
@@ -106,6 +110,7 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
+    scheduler.run_pending()
 
     return jsonify(json)
 
@@ -155,6 +160,9 @@ def Sqaure_off_Position():
                 resp = 'Failed'
     return resp
 
+def ping_server():
+    global wake_up_url
+    requests.get(wake_up_url)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
