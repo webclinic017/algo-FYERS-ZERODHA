@@ -6,7 +6,6 @@ import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
 from strategy import StrategyFactory
-import schedule
 import warnings as ws
 ws.simplefilter('ignore')
 
@@ -15,7 +14,7 @@ BROKER_APP = False
 STRATEGY_FAC = {}
 STRATEGY = {}
 SELECTED_STRATEGY = {}
-scheduler = schedule.Scheduler()
+
 
 
 
@@ -64,8 +63,7 @@ def connect():
     BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
 
-    scheduler.every(10).minutes.do(ping_server)
-    print(f'task scheduled:{scheduler.jobs}')
+
     connected = 'connected'
     return connected
 
@@ -161,9 +159,7 @@ def Sqaure_off_Position():
                 resp = 'Failed'
     return resp
 
-def ping_server():
-    wake_up_url  = 'https://tradealgo.onrender.com'
-    requests.get(wake_up_url)
+
 
 if __name__ == '__main__':
     app.run()
