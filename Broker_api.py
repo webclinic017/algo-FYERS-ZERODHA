@@ -85,20 +85,20 @@ class BROKER_API():
 
 
         def onmessage(message):
-                # print("Response:", message)
-                self.ltp[message['symbol']] = message['ltp']
+            # print("Response:", message)
+            self.ltp[message['symbol']] = message['ltp']
 
-
-        #       updating ticker data space
-                self.TICKER_OBJ.run_scheduler()
-        #       monitoring strategy
-                for key in self.STRATEGY_RUN.keys():
-                    self.STRATEGY_RUN[key].on_tick()
+    #       updating ticker data space
+            self.TICKER_OBJ.run_scheduler()
+    #       monitoring strategy
+            for key in self.STRATEGY_RUN.keys():
+                self.STRATEGY_RUN[key].on_tick()
 
 
 
         def onerror(message):
              print("Error:", message)
+
 
 
         def onclose(message):
@@ -137,7 +137,7 @@ class BROKER_API():
 
     def unsubscribe_symbol(self,symbols):
         # symbol in list format
-        self.BROKER_SOCKET.unsubscribe(symbols=symbols, data_type= "SymbolUpdate")
+        self.BROKER_SOCKET.unsubscribe(symbols=symbols, data_type="SymbolUpdate")
 
     def get_ltp(self,symbol):
         try:
@@ -147,7 +147,7 @@ class BROKER_API():
             return 0
 
     def delete_log(self):
-        files = ['fyersApi.log', 'fyersDataSocket.log']
+        files = ['fyersApi.log','fyersDataSocket.log']
         for file_name in files:
             if os.path.exists(file_name):
                 try:
