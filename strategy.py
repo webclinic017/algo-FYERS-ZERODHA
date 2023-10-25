@@ -4,26 +4,20 @@ from OrderMng import OrderMng
 from OrderParam import OrderParam
 import schedule
 from datetime import datetime
-import pandas_ta as ta
 import pytz
+from strategy_repo import STRATEGY_REPO
 
-class StrategyFactory:
-    TICKER_OBJ = None
-    LIVE_FEED = None
-    STR_MTM = 0
+class StrategyFactory(STRATEGY_REPO):
 
 
-    def __init__(self, name, mode, symbol, interval,expiry):
-        self.strategy_name = name
-        self.interval = interval
-        self.symbol = symbol
+    def __init__(self, name, mode,symbol,interval,expiry):
+        super().__init__(name,symbol,interval)
         self.expiry = expiry
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:BANKNIFTY_INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
         self.time_zone = pytz.timezone('Asia/kolkata')
-        self.position = 0
         self.signal = 0
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
@@ -32,7 +26,7 @@ class StrategyFactory:
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
         self.t1 = None
-        self.indicator_val = {}
+
 
 
     def get_instrument(self, option_type, step):
@@ -74,80 +68,33 @@ class StrategyFactory:
 
     def on_tick(self):
         if self.position:
-           self.STR_MTM = self.OrderManger.Live_MTM()
-
+            self.STR_MTM = self.OrderManger.Live_MTM()
 
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
 
-
-
-    def cal_indicator_val(self):
-        if self.strategy_name == '3EMA':
-            #  calculating ema
-            for n in [5, 21, 54 , 16]:
-                if n!=16:
-                    self.indicator_val[f'ema_{n}'] = ta.ema(self.ticker_space['close'], n)
-                else:
-                    self.indicator_val[f'rsi_{n}'] = ta.rsi(self.ticker_space['close'],n)
-
-            self.indicator_val['spr'] = self.indicator_val['ema_21']/self.indicator_val['ema_54']
-
-    def long_signal(self):
-        self.signal = 0
-        if self.trade_flag:
-            if self.strategy_name == '3EMA':
-                cond1 = self.indicator_val['ema_5'].iloc[-1]>self.indicator_val['ema_21'].iloc[-1]
-                cond2 = self.indicator_val['ema_21'].iloc[-1] > self.indicator_val['ema_54'].iloc[-1]
-                cond3 = (self.indicator_val['rsi_16'].iloc[-1]>60) & (self.indicator_val['spr'].iloc[-1]>(1+0.03/100))
-                cond4 = ((self.indicator_val['ema_5'].iloc[-1]>self.ticker_space['close'].iloc[-2]) &
-                         (self.indicator_val['ema_5'].iloc[-1]<self.ticker_space['close'].iloc[-1]))
-                cond5 = self.ticker_space['open'].iloc[-1]<self.ticker_space['close'].iloc[-1]
-
-                if all([cond1,cond2,cond3,cond4,cond5]):
-                    self.signal = 1
-
-        return self.signal
-
-    def short_signal(self):
-        self.signal=0
-        if self.trade_flag:
-            if self.strategy_name=='3EMA':
-                if (self.ticker_space['close'].iloc[-1] < self.indicator_val['ema_54'].iloc[-1]):
-                    self.signal = -1
-                elif self.indicator_val['rsi_16'].iloc[-1]<40:
-                    self.signal =-1
-
-        return self.signal
-
-    def monitor_signal(self, ticker_space):
+    def monitor_signal(self):
         # updating ticker space
-        self.ticker_space = ticker_space[f'{self.symbol}_{self.interval}'].iloc[:-1]
-        self.cal_indicator_val()
-        if not self.position:
-            if self.long_signal():
+        if not self.position and self.trade_flag:
+            self.signal = 1 if self.long_signal() else(-1 if self.short_signal() else 0)
+            if self.signal:
                 self.t1 = self.scheduler.every(4).seconds.do(self.Open_position)
 
         if self.position:
-            self.Exit_position_on_previous_candle()
-
-    def Exit_position_on_previous_candle(self):
-        # exit are based on previous candle basis rather than on ltp basis
-
-        if self.position:
-            if self.strategy_name == '3EMA':
-                # write exit condition here
-                if self.position > 0:
-                    if self.short_signal():
-                        self.squaring_of_all_position_AT_ONCE()
+            self.trailing_stops_candle_close()
+            if self.monitor_stops_candle_close():
+                self.squaring_of_all_position_AT_ONCE()
 
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
 
         if self.position and self.trade_flag:
-            if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
+            if self.monitor_stop_live():
+                self.squaring_of_all_position_AT_ONCE()
+
+            elif datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
                 self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
 
@@ -189,5 +136,6 @@ class StrategyFactory:
         self.LIVE_FEED.unsubscribe_symbol(self.instrument_under_strategy)
         self.instrument_under_strategy = []
         self.signal = 0
+        self.stop = 0
         self.OrderManger.refresh_variable()
 
