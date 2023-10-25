@@ -1,5 +1,4 @@
 import pandas as pd
-import requests
 from flask import Flask, render_template,jsonify,request,send_file
 from database import request_position
 import io
@@ -17,7 +16,6 @@ SELECTED_STRATEGY = {}
 
 
 
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -27,12 +25,12 @@ def home():
 
 @app.route('/on_connect', methods=['POST'])
 def connect():
+
     global STRATEGY
     global connected
     global BROKER_APP
     global STRATEGY_FAC
     global SELECTED_STRATEGY
-    global scheduler
 
     # creating a broker object  after login
     BROKER_APP = BROKER_API()
@@ -40,30 +38,35 @@ def connect():
     BROKER_APP.BROKER_WEBSOCKET_INT()
 
     # TICKER and interval  used  in strategies
-    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5}
+    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5,'NSE:NIFTYBANK-INDEX':5}
+
+
     TICKER_.BROKER_OBJ = BROKER_APP.BROKER_APP
     TICK = TICKER_(TICKER_UNDER_STRATEGY)
     BROKER_API.TICKER_OBJ = TICK
 
     # setting and creating strategy obj
-    StrategyFactory.TICKER_OBJ = TICK
+    StrategyFactory.TICKER = TICK
     StrategyFactory.LIVE_FEED = BROKER_APP
 
     # selecting strategy which is selected with checkbox
-    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5}}
+    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
+                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 10},
+                'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 30},
+                'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 10},
+                }
+
     json = request.get_json()
     SELECTED_STRATEGY = json['selected_strategy']
 
 
-    for key, value in STRATEGY.items():
+    for key,value in STRATEGY.items():
         if SELECTED_STRATEGY[key]:
             STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-            value['ticker'], value['interval'] ,expiry=json['expiry'][value['ticker']])
+            value['ticker'], value['interval'],expiry=json['expiry'][value['ticker']])
 
     BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
     TICKER_.STRATEGY_RUN = STRATEGY_FAC
-
-
     connected = 'connected'
     return connected
 
@@ -94,11 +97,11 @@ def update_positions():
     global STRATEGY_FAC
     global STRATEGY
     global SELECTED_STRATEGY
-    global scheduler
+
     POSITION = 0
 
     for strategy in STRATEGY.keys():
-        if STRATEGY_FAC:
+        if strategy in STRATEGY_FAC:
             value = round(STRATEGY_FAC[strategy].STR_MTM, 2)
             POSITION  = STRATEGY_FAC[strategy].position
         else:
@@ -109,7 +112,6 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
-   
 
     return jsonify(json)
 
@@ -158,7 +160,6 @@ def Sqaure_off_Position():
             else:
                 resp = 'Failed'
     return resp
-
 
 
 if __name__ == '__main__':
