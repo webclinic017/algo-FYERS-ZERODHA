@@ -17,7 +17,6 @@ class StrategyFactory(STRATEGY_REPO):
             'BANKNIFTY' if symbol == 'NSE:BANKNIFTY_INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
-        self.time_zone = pytz.timezone('Asia/kolkata')
         self.signal = 0
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
