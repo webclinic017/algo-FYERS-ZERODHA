@@ -16,6 +16,7 @@ class STRATEGY_REPO:
     LIVE_FEED = None
     TICKER = None
     STR_MTM = 0
+    time_zone = None
 
     def __init__(self, name, symbol, interval):
         self.strategy_name = name
@@ -26,7 +27,7 @@ class STRATEGY_REPO:
         self.stop = None
         self.time_series = []
         self.generate_timeseries()
-        self.time_zone = pytz.timezone('Asia/kolkata')
+
 
     def generate_timeseries(self):
         current_time = datetime.now(self.time_zone).replace(microsecond=0)
@@ -60,12 +61,10 @@ class STRATEGY_REPO:
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
 
-                # signal = cond1 & cond2 & cond3
-                signal = 1
+                signal = cond1 & cond2 & cond3
 
                 if signal:
-                    factor = 0.25
-                    # factor = 2.5
+                    factor = 2.5
                     lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                     self.stop = lower_bound.iloc[-1]
 
