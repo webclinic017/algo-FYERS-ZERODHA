@@ -61,7 +61,8 @@ class STRATEGY_REPO:
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
 
-                signal = cond1 & cond2 & cond3
+                # signal = cond1 & cond2 & cond3
+                signal=1
 
                 if signal:
                     factor = 2.5
@@ -80,7 +81,8 @@ class STRATEGY_REPO:
                 cond1 = (self.df['close'].iloc[-1] > ma_1.iloc[-1]) & (ma_1.iloc[-1] > ma_2.iloc[-1])
                 cond2 = (ang.iloc[-1] > ma_ang) & (rsi_val < rsi.iloc[-1])
 
-                signal = cond1 & cond2
+                # signal = cond1 & cond2
+                signal=1
 
                 if signal:
                     factor = 2.5
@@ -97,7 +99,8 @@ class STRATEGY_REPO:
                 cond1 = (long_ema.iloc[-1] < short_ema.iloc[-1]) & (long_ema.iloc[-2] > short_ema.iloc[-2])
                 cond2 = (rsi.iloc[-1] > rsi_val)
 
-                signal = cond1 & cond2
+                # signal = cond1 & cond2
+                signal=1
 
                 if signal:
                     factor = 0.5
