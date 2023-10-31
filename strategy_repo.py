@@ -62,7 +62,8 @@ class STRATEGY_REPO:
                 signal = cond1 & cond2 & cond3
 
                 if signal:
-                    factor = 2.5
+                    # factor = 2.5
+                    factor = 0.25
                     lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                     self.stop = lower_bound.iloc[-1]
 
@@ -145,6 +146,7 @@ class STRATEGY_REPO:
                 factor = 2.5
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
+
 
             elif self.strategy_name == '15_119_MA':
                 factor = 2.5
