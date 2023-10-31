@@ -3,7 +3,7 @@ import pandas_ta as ta
 import numpy as np
 import pandas as pd
 from datetime import datetime,timedelta
-
+import pytz
 
 def line_angle(df_, n):
     angle = [np.nan] * len(df_)
@@ -26,10 +26,10 @@ class STRATEGY_REPO:
         self.stop = None
         self.time_series = []
         self.generate_timeseries()
-
+        self.time_zone = pytz.timezone('Asia/kolkata')
 
     def generate_timeseries(self):
-        current_time = datetime.now().replace(microsecond=0)
+        current_time = datetime.now(self.time_zone).replace(microsecond=0)
         start_time = current_time.replace(hour=9, minute=15, second=0)
         end_time = current_time.replace(hour=15, minute=30, second=0)
 
@@ -41,7 +41,7 @@ class STRATEGY_REPO:
 
     def long_signal(self):
         signal = False
-        if datetime.now().replace(microsecond=0,second=0) in self.time_series:
+        if datetime.now(self.time_zone).replace(microsecond=0,second=0) in self.time_series:
             self.df = self.TICKER.get_data(self.symbol, f'{self.interval}T')
 
             if self.strategy_name == '3EMA':
@@ -59,12 +59,13 @@ class STRATEGY_REPO:
                 cond3 = ((ema_1.iloc[-1] > self.df['close'].iloc[-2]) & (ema_1.iloc[-1] < self.df['close'].iloc[-1]) &
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
+
                 # signal = cond1 & cond2 & cond3
                 signal = 1
 
                 if signal:
-                    # factor = 2.5
                     factor = 0.25
+                    # factor = 2.5
                     lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                     self.stop = lower_bound.iloc[-1]
 
@@ -121,7 +122,7 @@ class STRATEGY_REPO:
 
     def short_signal(self):
         signal = False
-        if datetime.now().replace(microsecond=0, second=0) in self.time_series:
+        if datetime.now(self.time_zone).replace(microsecond=0, second=0) in self.time_series:
             self.df = self.TICKER.get_data(self.symbol, f'{self.interval}T')
 
             if self.strategy_name == 'Mean_Rev_BNF':
