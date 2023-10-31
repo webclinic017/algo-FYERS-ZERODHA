@@ -1,4 +1,5 @@
 import pandas as pd
+import pytz
 from flask import Flask, render_template,jsonify,request,send_file
 from database import request_position
 import io
@@ -48,6 +49,7 @@ def connect():
     # setting and creating strategy obj
     StrategyFactory.TICKER = TICK
     StrategyFactory.LIVE_FEED = BROKER_APP
+    StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
     # selecting strategy which is selected with checkbox
     STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
