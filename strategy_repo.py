@@ -59,7 +59,8 @@ class STRATEGY_REPO:
                 cond3 = ((ema_1.iloc[-1] > self.df['close'].iloc[-2]) & (ema_1.iloc[-1] < self.df['close'].iloc[-1]) &
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
-                signal = cond1 & cond2 & cond3
+                # signal = cond1 & cond2 & cond3
+                signal = 1
 
                 if signal:
                     # factor = 2.5
