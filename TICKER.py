@@ -7,12 +7,13 @@ import schedule
 class TICKER_:
     BROKER_OBJ = None
     STRATEGY_RUN = None
+    LIVE_FEED = None
 
     def __init__(self, ticker):
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
-        self.schedule_at = 5
+        self.schedule_at = 1
         self.scheduler = schedule.Scheduler()
         self.update_tag = False
         self.hist_df = None
@@ -31,11 +32,15 @@ class TICKER_:
         return self.hist_df
 
     def run_update(self):
+
         for ticker,interval in self.ticker_under_strategy.items():
             self.ticker_space[f"{ticker}"] = self.get_history(ticker,interval)
 
         for strategy in self.STRATEGY_RUN.keys():
             self.STRATEGY_RUN[strategy].monitor_signal()
+
+
+
 
     def run_scheduler(self):
         if not self.scheduler.jobs:
