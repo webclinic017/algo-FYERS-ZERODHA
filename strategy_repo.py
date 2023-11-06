@@ -3,7 +3,7 @@ import pandas_ta as ta
 import numpy as np
 import pandas as pd
 from datetime import datetime,timedelta
-import pytz
+
 
 def line_angle(df_, n):
     angle = [np.nan] * len(df_)
@@ -15,7 +15,6 @@ def line_angle(df_, n):
 class STRATEGY_REPO:
     LIVE_FEED = None
     TICKER = None
-    STR_MTM = 0
     time_zone = None
 
     def __init__(self, name, symbol, interval):
@@ -23,11 +22,11 @@ class STRATEGY_REPO:
         self.symbol = symbol
         self.interval = interval
         self.position = 0
+        self.STR_MTM = 0
         self.df = None
         self.stop = None
         self.time_series = []
         self.generate_timeseries()
-
 
     def generate_timeseries(self):
         current_time = datetime.now(self.time_zone).replace(microsecond=0)
@@ -60,14 +59,15 @@ class STRATEGY_REPO:
                 cond3 = ((ema_1.iloc[-1] > self.df['close'].iloc[-2]) & (ema_1.iloc[-1] < self.df['close'].iloc[-1]) &
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
-
                 # signal = cond1 & cond2 & cond3
-                signal=1
+                signal = 1
 
                 if signal:
-                    factor = 2.5
-                    lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
+                    factor = 0.5
+                    # factor = 2.5
+                    lower_bound = self.df['close'] - (factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9))
                     self.stop = lower_bound.iloc[-1]
+
 
             elif self.strategy_name == '15_119_MA':
                 rsi_val = 58.13729793460143
@@ -82,12 +82,14 @@ class STRATEGY_REPO:
                 cond2 = (ang.iloc[-1] > ma_ang) & (rsi_val < rsi.iloc[-1])
 
                 # signal = cond1 & cond2
-                signal=1
+                signal = 1
 
                 if signal:
-                    factor = 2.5
-                    lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
+                    factor = 0.5
+                    # factor = 2.5
+                    lower_bound = self.df['close'] - (factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5))
                     self.stop = lower_bound.iloc[-1]
+
 
             elif self.strategy_name == 'MA_long_cross':
                 rsi_val = 50.558788896861614
@@ -99,8 +101,7 @@ class STRATEGY_REPO:
                 cond1 = (long_ema.iloc[-1] < short_ema.iloc[-1]) & (long_ema.iloc[-2] > short_ema.iloc[-2])
                 cond2 = (rsi.iloc[-1] > rsi_val)
 
-                # signal = cond1 & cond2
-                signal=1
+                signal = cond1 & cond2
 
                 if signal:
                     factor = 0.5
@@ -113,10 +114,12 @@ class STRATEGY_REPO:
                 spr = self.df['close']/sma
                 quan_down = spr.quantile(q_dn)
 
-                signal = (quan_down > spr.iloc[-2]) & (quan_down < spr.iloc[-1])
+                # signal = (quan_down > spr.iloc[-2]) & (quan_down < spr.iloc[-1])
+                signal = 1
 
                 if signal:
-                    factor = 1.4036476588918747
+                    factor = 0.5
+                    # factor = 1.4036476588918747
                     lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'],self.df['close'], 5)
                     self.stop = lower_bound.iloc[-1]
 
@@ -140,6 +143,7 @@ class STRATEGY_REPO:
                     upper_bound = self.df['close'] + factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                     self.stop = upper_bound.iloc[- 1]
 
+
         return signal
 
     def trailing_stops_candle_close(self):
@@ -147,13 +151,15 @@ class STRATEGY_REPO:
 
         if self.position > 0:
             if self.strategy_name == '3EMA':
-                factor = 2.5
+                factor = 0.75
+                # factor = 2.5
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
 
             elif self.strategy_name == '15_119_MA':
-                factor = 2.5
+                factor = 0.75
+                # factor = 2.5
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
@@ -163,13 +169,15 @@ class STRATEGY_REPO:
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
             elif self.strategy_name == 'Mean_Rev_BNF':
-                factor = 1.4036476588918747
+                factor = 0.75
+                # factor = 1.4036476588918747
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
         elif self.position < 0:
             if self.strategy_name == 'Mean_Rev_BNF':
-                factor = 1.4036476588918747
+                factor = 0.75
+                # factor = 1.4036476588918747
                 upper_bound = self.df['close'] + factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = min(upper_bound.iloc[- 1],self.stop)
 
@@ -186,14 +194,15 @@ class STRATEGY_REPO:
 
     def monitor_stop_live(self):
         hit = False
+        spot = 0
         if self.position:
             if self.strategy_name in ['3EMA', '15_119_MA', 'MA_long_cross','Mean_Rev_BNF']:
-                ltp = self.LIVE_FEED.get_ltp(self.symbol)
-                if self.position > 0 and ltp:
-                    if self.stop > ltp:
+                spot = self.LIVE_FEED.get_ltp(self.symbol)
+                if (self.position > 0) and (spot > 0):
+                    if self.stop > spot:
                         hit = True
-                elif self.position < 0 and ltp:
-                    if self.stop < ltp:
+                elif (self.position < 0) and (spot > 0):
+                    if self.stop < spot:
                         hit = True
 
         return hit
