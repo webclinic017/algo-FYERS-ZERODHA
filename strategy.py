@@ -4,17 +4,16 @@ from OrderMng import OrderMng
 from OrderParam import OrderParam
 import schedule
 from datetime import datetime
-import pytz
 from strategy_repo import STRATEGY_REPO
 
+
 class StrategyFactory(STRATEGY_REPO):
-
-
+    members = {}
     def __init__(self, name, mode,symbol,interval,expiry):
         super().__init__(name,symbol,interval)
         self.expiry = expiry
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
-            'BANKNIFTY' if symbol == 'NSE:BANKNIFTY_INDEX' else 'FINNIFTY')
+            'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
         self.signal = 0
@@ -25,8 +24,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
         self.t1 = None
-
-
+        self.members[self.strategy_name]=self
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
@@ -43,7 +41,6 @@ class StrategyFactory(STRATEGY_REPO):
 
     def Open_position(self):
 
-
         if not self.instrument_under_strategy:
             self.param = {}
             for key, value in OrderParam(self.strategy_name, self.signal).items():
@@ -52,15 +49,19 @@ class StrategyFactory(STRATEGY_REPO):
                                           'Qty': value['Qty']}
 
             # subscribing for instrument
-            self.LIVE_FEED.subscribe_new_symbol(self.instrument_under_strategy)
+            instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.ltp]
+            if instrument_to_subscribe:
+                self.LIVE_FEED.subscribe_new_symbol(instrument_to_subscribe)
 
         # checking the  feed has been started for all instruments subscribe above then taking position
-
         if all([s in self.LIVE_FEED.ltp.keys() for s in self.instrument_under_strategy]):
-            if all([self.OrderManger.Add_position(**self.param[instrument]) for instrument in self.instrument_under_strategy]):
-                self.position = self.signal
-            else:
-                print('Unable to place order please check with broker terminal')
+            for instrument in self.instrument_under_strategy:
+                success = self.OrderManger.Add_position(**self.param[instrument])
+                if not success:
+                    print(f'Unable to place order for {instrument} please check with broker terminal')
+                    break
+                else:
+                    self.position = self.signal
 
             # once the order is placed , this function will be de-scheduled
             self.scheduler.cancel_job(self.t1)
@@ -68,7 +69,6 @@ class StrategyFactory(STRATEGY_REPO):
     def on_tick(self):
         if self.position:
             self.STR_MTM = self.OrderManger.Live_MTM()
-
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
@@ -93,7 +93,7 @@ class StrategyFactory(STRATEGY_REPO):
             if self.monitor_stop_live():
                 self.squaring_of_all_position_AT_ONCE()
 
-            elif datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
+            elif datetime.now(self.time_zone).time() > datetime.strptime('15:29:00', "%H:%M:%S").time():
                 self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
 
@@ -101,9 +101,11 @@ class StrategyFactory(STRATEGY_REPO):
     def squaring_of_all_position_AT_ONCE(self):
         success = False
         # function ensure instrument will SELL trans_type will be executed first then hedge position
+
         sequence = {k: v for k, v in
                     sorted(self.OrderManger.Transtype.items(),
                            key=lambda item: (item[1] == 'BUY', item[1] == 'SELL'))}
+
 
         # ensuring every position is squared off if not break the loop else set open position to zero
         for instrument in sequence.keys():
@@ -127,14 +129,27 @@ class StrategyFactory(STRATEGY_REPO):
     def refresh_var(self):
         # updating mtm after order placement
         self.STR_MTM = self.OrderManger.CumMtm
-
-        # removing instrument from ltp dictionary
-        for s in self.instrument_under_strategy:
-            self.LIVE_FEED.ltp.pop(s, None)
-        # unsubscribing option instrument
-        self.LIVE_FEED.unsubscribe_symbol(self.instrument_under_strategy)
-        self.instrument_under_strategy = []
         self.signal = 0
         self.stop = 0
         self.OrderManger.refresh_variable()
+        self.cease_subscriptions(self)
+        self.instrument_under_strategy = []
+
+    @classmethod
+    def cease_subscriptions(cls, self):
+        temp = []
+        for member, obj in cls.members.items():
+            if member != self.strategy_name:
+                ins = obj.instrument_under_strategy
+                for i in ins:
+                    temp.append(i)
+
+        for member,obj in cls.members.items():
+            if member == self.strategy_name:
+                for instrument in self.instrument_under_strategy:
+                    if instrument not in temp:
+                        self.LIVE_FEED.unsubscribe_symbol([instrument])
+                        self.LIVE_FEED.ltp.pop(instrument,None)
+
+
 
