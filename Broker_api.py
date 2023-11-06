@@ -18,8 +18,8 @@ def getEncodedString(string):
 
 
 class BROKER_API():
-    TICKER_OBJ = None
-    STRATEGY_RUN = None
+    TICKER_OBJ = False
+    STRATEGY_RUN = False
     ltp = {}
     def __init__(self):
         self.BROKER_APP = None
@@ -85,14 +85,16 @@ class BROKER_API():
 
 
         def onmessage(message):
-            # print("Response:", message)
-            self.ltp[message['symbol']] = message['ltp']
+            if 'ltp' in message:
+                self.ltp[message['symbol']] = message['ltp']
 
     #       updating ticker data space
-            self.TICKER_OBJ.run_scheduler()
+            if self.TICKER_OBJ:
+                self.TICKER_OBJ.run_scheduler()
     #       monitoring strategy
-            for key in self.STRATEGY_RUN.keys():
-                self.STRATEGY_RUN[key].on_tick()
+            if self.STRATEGY_RUN:
+                for key in self.STRATEGY_RUN.keys():
+                    self.STRATEGY_RUN[key].on_tick()
 
 
 
