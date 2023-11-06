@@ -26,9 +26,10 @@ class OrderMng():
         for instrument in self.nav.keys():
             if self.net_qty[instrument]:
                 self.MTM[instrument] = self.LIVE_FEED.get_ltp(instrument)*self.net_qty[instrument]-self.nav[instrument]
+
         return self.CumMtm+sum(self.MTM.values())
 
-    def Add_position(self ,Instrument,Transtype,Qty):
+    def Add_position(self,Instrument,Transtype,Qty):
          price = 0
          success = False
          if self.mode == 'Simulator':
@@ -41,16 +42,19 @@ class OrderMng():
          # initialize value with zero if not present
          if Instrument not in self.BuyValue:
              self.BuyValue[Instrument] = 0
+
          if Instrument not in self.BuyQty:
              self.BuyQty[Instrument] = 0
 
          if Instrument not in self.SellValue:
              self.SellValue[Instrument] = 0
+
          if Instrument not in self.SellQty:
              self.SellQty[Instrument] = 0
 
          if Instrument not in self.net_qty:
              self.net_qty[Instrument] = 0
+
          if Instrument not in self.nav:
              self.nav[Instrument] = 0
 
@@ -63,21 +67,20 @@ class OrderMng():
             self.nav[Instrument]+=(price*Qty)
             self.Transtype[Instrument] = Transtype
 
-         elif Transtype=='SELL' and success:
-            self.SellValue[Instrument]+=price*Qty
+         elif Transtype == 'SELL' and success:
+            self.SellValue[Instrument] += price*Qty
             self.SellQty[Instrument] += Qty
-            self.net_qty[Instrument]-=Qty
-            self.nav[Instrument]-=(price*Qty)
+            self.net_qty[Instrument] -= Qty
+            self.nav[Instrument] -= (price*Qty)
             self.Transtype[Instrument] = Transtype
 
          if success:
-            self.entry_time[Instrument]  = datetime.now(self.time_zone).time()
+            self.entry_time[Instrument] = datetime.now(self.time_zone).time()
 
 
          return success
 
     def close_position(self, Instrument,Qty):
-
         price = 0
         success = False
         if self.mode == 'Simulator':
@@ -108,7 +111,7 @@ class OrderMng():
 
         return success
 
-    def update_server(self , Instrument , Qty):
+    def update_server(self,Instrument,Qty):
         ABP = round(self.BuyValue[Instrument]/self.BuyQty[Instrument],2)
         ASP = round(self.SellValue[Instrument] / self.SellQty[Instrument], 2)
         MTM = round((ASP-ABP)*Qty)
@@ -143,3 +146,6 @@ class OrderMng():
         self.Transtype = {}
         self.entry_time = {}
         self.exit_time = {}
+        self.MTM = {}
+
+
