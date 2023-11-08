@@ -1,160 +1,103 @@
-from fyers_apiv3 import fyersModel
-from fyers_apiv3.FyersWebsocket import data_ws
-from datetime import datetime
-from time import sleep
-import os
-import pyotp
-import requests
-from urllib.parse import parse_qs,urlparse
-import base64
-import pytz
 
+from pya3 import*
+import json
 
-def getEncodedString(string):
-    string = str(string)
-    base64_bytes = base64.b64encode(string.encode("ascii"))
-    return base64_bytes.decode("ascii")
-
-
-
-class BROKER_API():
+class BROKER_API:
     TICKER_OBJ = False
     STRATEGY_RUN = False
     ltp = {}
+
     def __init__(self):
         self.BROKER_APP = None
-        self.BROKER_SOCKET = None
-        self.access_token = None
-        self.client_id = None
-        self.time_zone = pytz.timezone('Asia/kolkata')
-        self.delete_log()
-
+        self.socket_opened = None
+        self.token = {'26009':"NSE:NIFTYBANK-INDEX", '26000':"NSE:NIFTY50-INDEX",'39950':'NSE:FINNIFTY-INDEX'}
     def login(self):
+        user = "286412"
+        key = 'nUUtMteC10LJJ2pyrzI6KFKYq6GxqoLSFIWMUgUeozx5HiZqlKfOBa3GcancGhAKWy2VnKnYuHC6m1u5VqXLIsacja9io1rs8O19dG8PHlKCJCjWSCeZIWarmR0XiGlO'
+        self.BROKER_APP = Aliceblue(user_id=user,api_key=key)
+        self.BROKER_APP.get_session_id()
+        self.get_contracts()
 
-        redirect_uri = "https://127.0.0.1:5000/"
-        self.client_id='IC8PF0KRVY-100'
-        secret_key = 'KV1T805HV4'
-        FY_ID = "XT00158"
-        TOTP_KEY = "5MI36QR765HXYCG2JMW5OE5SGPEQUBLC"
-        PIN = "2005"
+        return self.BROKER_APP
 
-        URL_SEND_LOGIN_OTP = "https://api-t2.fyers.in/vagator/v2/send_login_otp_v2"
-        res = requests.post(url=URL_SEND_LOGIN_OTP, json={"fy_id": getEncodedString(FY_ID), "app_id": "2"}).json()
-        if datetime.now(self.time_zone).second % 30 > 27: sleep(5)
-        URL_VERIFY_OTP = "https://api-t2.fyers.in/vagator/v2/verify_otp"
-        res2 = requests.post(url=URL_VERIFY_OTP,
-                         json={"request_key": res["request_key"], "otp": pyotp.TOTP(TOTP_KEY).now()}).json()
+    def get_contracts(self):
+        self.BROKER_APP.get_contract_master('NFO')
 
-        ses = requests.Session()
-        URL_VERIFY_OTP2 = "https://api-t2.fyers.in/vagator/v2/verify_pin_v2"
-        payload2 = {"request_key": res2["request_key"], "identity_type": "pin", "identifier": getEncodedString(PIN)}
-        res3 = ses.post(url=URL_VERIFY_OTP2, json=payload2).json()
-        ses.headers.update({
-        'authorization': f"Bearer {res3['data']['access_token']}"
-        })
+    @property
+    def get_idx_info(self):
+        sub = []
+        typ = ['INDICES','INDICES','NFO']
+        for s,v in zip(typ,self.token.keys()):
+            sub.append(self.BROKER_APP.get_instrument_by_token(s,int(v)))
 
-        TOKENURL = "https://api-t1.fyers.in/api/v3/token"
-        payload3 = {"fyers_id": FY_ID,
-                "app_id": self.client_id[:-4],
-                "redirect_uri": redirect_uri,
-                "appType": "100", "code_challenge": "",
-                "state": "None", "scope": "", "nonce": "", "response_type": "code", "create_cookie": True}
+        return sub
 
-        res3 = ses.post(url=TOKENURL, json=payload3).json()
-        url = res3['Url']
-        parsed = urlparse(url)
-        auth_code = parse_qs(parsed.query)['auth_code'][0]
-        auth_code
-        grant_type = "authorization_code"
-        response_type = "code"
-        session = fyersModel.SessionModel(
-        client_id=self.client_id,
-        secret_key=secret_key,
-        redirect_uri=redirect_uri,
-        response_type=response_type,
-        grant_type=grant_type
-        )
+    def get_instrument_info(self,symbol):
+        info = self.BROKER_APP.get_instrument_by_symbol('NFO', symbol)
+        # recording token and its related symbol
+        self.token[str(info[1])] = info[3]
+        return info
 
-        session.set_token(auth_code)
-        response = session.generate_token()
-        self.access_token = response['access_token']
-        self.BROKER_APP = fyersModel.FyersModel(client_id=self.client_id, is_async=False, token=self.access_token, log_path=os.getcwd())
+    def subscribe_spot(self):
+        self.BROKER_APP.subscribe(self.get_idx_info)
 
 
     def BROKER_WEBSOCKET_INT(self):
 
+        def socket_open():  # Socket open callback function
+            print('connected')
+            self.socket_opened = True
 
-        def onmessage(message):
-            if 'ltp' in message:
-                self.ltp[message['symbol']] = message['ltp']
+        def socket_close():  # On Socket close this callback function will trigger
+            self.socket_opened = False
+            print("Closed")
 
-    #       updating ticker data space
-            if self.TICKER_OBJ:
-                self.TICKER_OBJ.run_scheduler()
-    #       monitoring strategy
-            if self.STRATEGY_RUN:
-                for key in self.STRATEGY_RUN.keys():
-                    self.STRATEGY_RUN[key].on_tick()
+        def socket_error(message):  # Socket Error Message will receive in this callback function
+            print("Error :", message)
 
+        def feed_data(message):  # Socket feed data will receive in this callback function
+            feed_message = json.loads(message)
+            if 'lp' in feed_message:
+                self.ltp[self.token[str(feed_message['tk'])]] = float(feed_message['lp'])
 
+        self.BROKER_APP.start_websocket(socket_open_callback=socket_open, socket_close_callback=socket_close,
+                              socket_error_callback=socket_error, subscription_callback=feed_data,
+                              run_in_background=True, market_depth=False)
 
-        def onerror(message):
-             print("Error:", message)
+        while not self.socket_opened:
+            pass
+        else:
+            self.subscribe_spot()
 
-
-
-        def onclose(message):
-            print("Connection closed:", message)
-
-
-        def onopen():
-            data_type = "SymbolUpdate"
-
-            # Subscribe to the specified symbols and data type
-            symbols = ["NSE:NIFTY50-INDEX", "NSE:NIFTYBANK-INDEX" , "NSE:FINNIFTY-INDEX"]
-            self.BROKER_SOCKET.subscribe(symbols=symbols, data_type=data_type)
-            self.BROKER_SOCKET.keep_running()
-
-
-        token = f"{self.client_id}:{self.access_token}"
-
-
-        self.BROKER_SOCKET = data_ws.FyersDataSocket(
-            access_token=token,
-            log_path="",
-            litemode=True,
-            write_to_file=False,
-            reconnect=True,
-            on_connect=onopen,
-            on_close=onclose,
-            on_error=onerror,
-            on_message=onmessage
-        )
-
-        self.BROKER_SOCKET.connect()
-
-    def subscribe_new_symbol(self,symbols):
-        # symbol in list format
-        self.BROKER_SOCKET.subscribe(symbols=symbols, data_type="SymbolUpdate")
+    def subscribe_new_symbol(self, symbols):
+        info = [self.get_instrument_info(s) for s in symbols]
+        self.BROKER_APP.subscribe(info)
 
     def unsubscribe_symbol(self,symbols):
-        # symbol in list format
-        self.BROKER_SOCKET.unsubscribe(symbols=symbols, data_type="SymbolUpdate")
+        info = [self.get_instrument_info(s) for s in symbols]
+        self.BROKER_APP.unsubscribe(info)
 
-    def get_ltp(self,symbol):
+    def get_ltp(self, symbol):
+
         try:
             return self.ltp[symbol]
 
         except KeyError:
             return 0
 
-    def delete_log(self):
-        files = ['fyersApi.log','fyersDataSocket.log']
-        for file_name in files:
-            if os.path.exists(file_name):
-                try:
-                    os.remove(file_name)
-                except Exception as e:
-                    print(f'Error deleting log file {e}')
-            else:
-                pass
+    def stop_websocket(self):
+        self.BROKER_APP.stop_websocket()
+
+
+
+    def on_tick(self):
+
+        if self.TICKER_OBJ:
+            self.TICKER_OBJ.run_scheduler()
+            #       monitoring strategy
+        if self.STRATEGY_RUN:
+            for key in self.STRATEGY_RUN.keys():
+                self.STRATEGY_RUN[key].on_tick()
+
+
+
