@@ -8,6 +8,7 @@ from TICKER import TICKER_
 from strategy import StrategyFactory
 import warnings as ws
 ws.simplefilter('ignore')
+from FYERS_BR import HIST_BROKER_
 
 connected = 'not connected'
 BROKER_APP = False
@@ -35,16 +36,19 @@ def connect():
 
     # creating a broker object  after login
     BROKER_APP = BROKER_API()
+    HIST_APP = HIST_BROKER_()
+
+    # login to brokers and connecting websocket for datafeed
     BROKER_APP.login()
+    HIST_APP.login()
     BROKER_APP.BROKER_WEBSOCKET_INT()
 
     # TICKER and interval  used  in strategies
-    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5,'NSE:NIFTYBANK-INDEX':5}
-
-
-    TICKER_.BROKER_OBJ = BROKER_APP.BROKER_APP
+    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1,'NSE:NIFTYBANK-INDEX':1}
+    TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
     TICK = TICKER_(TICKER_UNDER_STRATEGY)
     BROKER_API.TICKER_OBJ = TICK
+    TICKER_.LIVE_FEED = BROKER_APP
 
     # setting and creating strategy obj
     StrategyFactory.TICKER = TICK
@@ -52,10 +56,10 @@ def connect():
     StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
     # selecting strategy which is selected with checkbox
-    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
-                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 10},
-                'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 30},
-                'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 10},
+    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
+                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
+                'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
+                'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
                 }
 
     json = request.get_json()
@@ -102,10 +106,13 @@ def update_positions():
 
     POSITION = 0
 
+    if BROKER_APP:
+        BROKER_APP.on_tick()
+
     for strategy in STRATEGY.keys():
         if strategy in STRATEGY_FAC:
             value = round(STRATEGY_FAC[strategy].STR_MTM, 2)
-            POSITION  = STRATEGY_FAC[strategy].position
+            POSITION = STRATEGY_FAC[strategy].position
         else:
             value = 0
         json[strategy] = {
