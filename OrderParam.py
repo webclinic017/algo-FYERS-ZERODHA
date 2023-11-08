@@ -3,7 +3,7 @@
 # p1 ,p2 stands for the order of  sequence of postions to be taken under certain strategy
 
 def OrderParam(strategy_name,signal):
-    OrderPar  = None
+    OrderPar  = {}
     if strategy_name=='3EMA':
         # directional option selling strategy when upside movement is expected
         if signal == 1:
@@ -26,4 +26,6 @@ def OrderParam(strategy_name,signal):
         elif signal == -1:
             p1 = {'opt': 'PE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
             OrderPar = {'p1': p1}
+
+
     return OrderPar
