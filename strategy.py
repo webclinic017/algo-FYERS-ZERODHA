@@ -23,7 +23,6 @@ class StrategyFactory(STRATEGY_REPO):
         self.OrderManger = OrderMng(mode, name)
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
-        self.t1 = None
         self.members[self.strategy_name]=self
 
     def get_instrument(self, option_type, step):
@@ -33,14 +32,13 @@ class StrategyFactory(STRATEGY_REPO):
         strike = lambda: (round(spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'NSE:{self.index}{self.expiry}{stk}{option_type}'
+        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
         return instrument
 
     def Open_position(self):
-
         if not self.instrument_under_strategy:
             self.param = {}
             for key, value in OrderParam(self.strategy_name, self.signal).items():
@@ -64,7 +62,8 @@ class StrategyFactory(STRATEGY_REPO):
                     self.position = self.signal
 
             # once the order is placed , this function will be de-scheduled
-            self.scheduler.cancel_job(self.t1)
+            self.scheduler.clear()
+
 
     def on_tick(self):
         if self.position:
@@ -78,7 +77,8 @@ class StrategyFactory(STRATEGY_REPO):
         if not self.position and self.trade_flag:
             self.signal = 1 if self.long_signal() else(-1 if self.short_signal() else 0)
             if self.signal:
-                self.t1 = self.scheduler.every(4).seconds.do(self.Open_position)
+                 self.scheduler.every(4).seconds.do(self.Open_position)
+
 
         if self.position:
             self.trailing_stops_candle_close()
@@ -132,21 +132,23 @@ class StrategyFactory(STRATEGY_REPO):
         self.signal = 0
         self.stop = 0
         self.OrderManger.refresh_variable()
-        self.cease_subscriptions(self)
+        StrategyFactory.cease_subscriptions(self)
         self.instrument_under_strategy = []
 
     @classmethod
     def cease_subscriptions(cls, self):
         temp = []
+
         for member, obj in cls.members.items():
             if member != self.strategy_name:
                 ins = obj.instrument_under_strategy
                 for i in ins:
                     temp.append(i)
 
+
         for member,obj in cls.members.items():
             if member == self.strategy_name:
-                for instrument in self.instrument_under_strategy:
+                for instrument in obj.instrument_under_strategy:
                     if instrument not in temp:
                         self.LIVE_FEED.unsubscribe_symbol([instrument])
                         self.LIVE_FEED.ltp.pop(instrument,None)
