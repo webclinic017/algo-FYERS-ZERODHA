@@ -40,8 +40,6 @@ class TICKER_:
             self.STRATEGY_RUN[strategy].monitor_signal()
 
 
-
-
     def run_scheduler(self):
         if not self.scheduler.jobs:
             now = datetime.now(self.time_zone)
