@@ -11,6 +11,7 @@ class BROKER_API:
         self.BROKER_APP = None
         self.socket_opened = None
         self.token = {'26009':"NSE:NIFTYBANK-INDEX", '26000':"NSE:NIFTY50-INDEX",'39950':'NSE:FINNIFTY-INDEX'}
+        self.symbol_on_subscription = []
 
     def login(self):
         user = "286412"
@@ -71,12 +72,12 @@ class BROKER_API:
             self.subscribe_spot()
 
     def subscribe_new_symbol(self, symbols):
-        info = [self.get_instrument_info(s) for s in symbols]
-        self.BROKER_APP.subscribe(info)
-
-    def unsubscribe_symbol(self,symbols):
-        info = [self.get_instrument_info(s) for s in symbols]
-        self.BROKER_APP.unsubscribe(info)
+        info = [self.get_instrument_info(s) for s in symbols if s not in self.symbol_on_subscription]
+        if info:
+            self.BROKER_APP.subscribe(info)
+            for s in symbols:
+                if s not in self.symbol_on_subscription:
+                    self.symbol_on_subscription.append(s)
 
 
 
@@ -97,10 +98,13 @@ class BROKER_API:
 
         if self.TICKER_OBJ:
             self.TICKER_OBJ.run_scheduler()
-            #       monitoring strategy
+            #  monitoring strategy
         if self.STRATEGY_RUN:
             for key in self.STRATEGY_RUN.keys():
                 self.STRATEGY_RUN[key].on_tick()
+
+
+
 
 
 
