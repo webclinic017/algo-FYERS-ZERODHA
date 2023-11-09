@@ -123,8 +123,7 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
-    # closing socket for symbols which are not in trade
-    close_connection_for()
+
 
     return jsonify(json)
 
@@ -175,19 +174,10 @@ def Sqaure_off_Position():
     return resp
 
 
-def close_connection_for():
-    global STRATEGY_FAC
-    global BROKER_APP
-    temp = []
 
-    if StrategyFactory.UN_SUBSCRIPTION_:
-        for obj in STRATEGY_FAC.values():
-            for s in obj.instrument_under_strategy:
-                temp.append(s)
-        # closing socket for  / unsubscribing the symbol which are not in open position
-        symbol = [s for s in list(set(StrategyFactory.UN_SUBSCRIPTION_)) if s not in temp]
-        BROKER_APP.unsubscribe_symbol(symbol)
-        StrategyFactory.UN_SUBSCRIPTION_ = []
+
+
+
 
 
 
