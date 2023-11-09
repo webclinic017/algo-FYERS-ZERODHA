@@ -11,6 +11,7 @@ class BROKER_API:
         self.BROKER_APP = None
         self.socket_opened = None
         self.token = {'26009':"NSE:NIFTYBANK-INDEX", '26000':"NSE:NIFTY50-INDEX",'39950':'NSE:FINNIFTY-INDEX'}
+
     def login(self):
         user = "286412"
         key = 'nUUtMteC10LJJ2pyrzI6KFKYq6GxqoLSFIWMUgUeozx5HiZqlKfOBa3GcancGhAKWy2VnKnYuHC6m1u5VqXLIsacja9io1rs8O19dG8PHlKCJCjWSCeZIWarmR0XiGlO'
@@ -76,6 +77,8 @@ class BROKER_API:
     def unsubscribe_symbol(self,symbols):
         info = [self.get_instrument_info(s) for s in symbols]
         self.BROKER_APP.unsubscribe(info)
+
+
 
     def get_ltp(self, symbol):
 
