@@ -8,7 +8,6 @@ from strategy_repo import STRATEGY_REPO
 
 
 class StrategyFactory(STRATEGY_REPO):
-    UN_SUBSCRIPTION_ = []
 
     def __init__(self, name, mode,symbol,interval,expiry):
         super().__init__(name,symbol,interval)
@@ -127,11 +126,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.stop = 0
         self.OrderManger.refresh_variable()
         # symbol to unsubscribe
-        for s in self.instrument_under_strategy:
-            self.UN_SUBSCRIPTION_.append(s)
-        self.instrument_under_strategy = []
-
-
+        self.instrument_under_strategy =[]
 
 
 
