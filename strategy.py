@@ -8,7 +8,8 @@ from strategy_repo import STRATEGY_REPO
 
 
 class StrategyFactory(STRATEGY_REPO):
-    members = {}
+    UN_SUBSCRIPTION_ = []
+
     def __init__(self, name, mode,symbol,interval,expiry):
         super().__init__(name,symbol,interval)
         self.expiry = expiry
@@ -23,7 +24,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.OrderManger = OrderMng(mode, name)
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
-        self.members[self.strategy_name]=self
+
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
@@ -119,39 +120,22 @@ class StrategyFactory(STRATEGY_REPO):
             self.position = 0
             self.refresh_var()
 
-
-    def average_position(self):
-        # defining the condition for  average your position
-
-        if self.position:
-            pass
-
     def refresh_var(self):
         # updating mtm after order placement
         self.STR_MTM = self.OrderManger.CumMtm
         self.signal = 0
         self.stop = 0
         self.OrderManger.refresh_variable()
-        StrategyFactory.cease_subscriptions(self)
+        # symbol to unsubscribe
+        for s in self.instrument_under_strategy:
+            self.UN_SUBSCRIPTION_.append(s)
         self.instrument_under_strategy = []
 
-    @classmethod
-    def cease_subscriptions(cls, self):
-        temp = []
-
-        for member, obj in cls.members.items():
-            if member != self.strategy_name:
-                ins = obj.instrument_under_strategy
-                for i in ins:
-                    temp.append(i)
 
 
-        for member,obj in cls.members.items():
-            if member == self.strategy_name:
-                for instrument in obj.instrument_under_strategy:
-                    if instrument not in temp:
-                        self.LIVE_FEED.unsubscribe_symbol([instrument])
-                        self.LIVE_FEED.ltp.pop(instrument,None)
+
+
+
 
 
 
