@@ -59,7 +59,7 @@ def connect():
 
     # selecting strategy which is selected with checkbox
     STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
-                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 3},
+                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
                 'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 10},
                 'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 15},
                 }
