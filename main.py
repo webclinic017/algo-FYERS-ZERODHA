@@ -1,5 +1,5 @@
+import threading
 import time
-
 import pandas as pd
 import pytz
 from flask import Flask, render_template,jsonify,request,send_file
@@ -8,18 +8,31 @@ import io
 from Broker_api import BROKER_API
 from TICKER import TICKER_
 from strategy import StrategyFactory
+from FYERS_BR import HIST_BROKER_
 import warnings as ws
 ws.simplefilter('ignore')
-from FYERS_BR import HIST_BROKER_
 
-connected = 'not connected'
+
+connected = False
 BROKER_APP = False
 STRATEGY_FAC = {}
 STRATEGY = {}
 SELECTED_STRATEGY = {}
 
 
+def on_tick():
+    global BROKER_APP
+    global connected
+    # creating a loop for running strategy functions
+    while connected:
+        if BROKER_APP:
+            BROKER_APP.on_tick()
+            time.sleep(1)
+    else:
+        BROKER_APP.stop_websocket()
 
+
+# creating flask web app
 app = Flask(__name__)
 
 @app.route('/')
@@ -29,54 +42,65 @@ def home():
 
 @app.route('/on_connect', methods=['POST'])
 def connect():
-
+    status = ''
     global STRATEGY
     global connected
     global BROKER_APP
     global STRATEGY_FAC
     global SELECTED_STRATEGY
 
-    # creating a broker object  after login
-    BROKER_APP = BROKER_API()
-    HIST_APP = HIST_BROKER_()
+    if not connected:
+        # creating a broker object  after login
+        BROKER_APP = BROKER_API()
+        HIST_APP = HIST_BROKER_()
 
-    # login to brokers and connecting websocket for datafeed
-    BROKER_APP.login()
-    HIST_APP.login()
-    BROKER_APP.BROKER_WEBSOCKET_INT()
+        # login to brokers and connecting websocket for datafeed
+        BROKER_APP.login()
+        HIST_APP.login()
+        BROKER_APP.BROKER_WEBSOCKET_INT()
 
-    # TICKER and interval  used  in strategies
-    TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1,'NSE:NIFTYBANK-INDEX':1}
-    TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
-    TICK = TICKER_(TICKER_UNDER_STRATEGY)
-    BROKER_API.TICKER_OBJ = TICK
-    TICKER_.LIVE_FEED = BROKER_APP
+        # TICKER and interval  used  in strategies
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1,'NSE:NIFTYBANK-INDEX':1}
+        TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
+        TICK = TICKER_(TICKER_UNDER_STRATEGY)
+        BROKER_API.TICKER_OBJ = TICK
+        TICKER_.LIVE_FEED = BROKER_APP
 
-    # setting and creating strategy obj
-    StrategyFactory.TICKER = TICK
-    StrategyFactory.LIVE_FEED = BROKER_APP
-    StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
+        # setting and creating strategy obj
+        StrategyFactory.TICKER = TICK
+        StrategyFactory.LIVE_FEED = BROKER_APP
+        StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
-    # selecting strategy which is selected with checkbox
-    STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
-                '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
-                'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
-                'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
-                }
+        # selecting strategy which is selected with checkbox
+        STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
+                    '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
+                    'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
+                    'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
+                    }
 
-    json = request.get_json()
-    SELECTED_STRATEGY = json['selected_strategy']
+        json = request.get_json()
+        SELECTED_STRATEGY = json['selected_strategy']
 
 
-    for key,value in STRATEGY.items():
-        if SELECTED_STRATEGY[key]:
-            STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-            value['ticker'], value['interval'],expiry=json['expiry'][value['ticker']])
+        for key,value in STRATEGY.items():
+            if SELECTED_STRATEGY[key]:
+                STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
+                value['ticker'], value['interval'],expiry=json['expiry'][value['ticker']])
 
-    BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
-    TICKER_.STRATEGY_RUN = STRATEGY_FAC
-    connected = 'connected'
-    return connected
+        BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
+        TICKER_.STRATEGY_RUN = STRATEGY_FAC
+
+    # starting the threads
+    if not connected:
+        connected = True
+        thread = threading.Thread(target=on_tick)
+        thread.start()
+        status = 'connected'
+    elif connected:
+        connected = False
+        status = 'not connected'
+
+    return status
 
 
 @app.route('/update-tick-data')
@@ -107,9 +131,6 @@ def update_positions():
     global SELECTED_STRATEGY
 
     POSITION = 0
-
-    if BROKER_APP:
-        BROKER_APP.on_tick()
 
     for strategy in STRATEGY.keys():
         if strategy in STRATEGY_FAC:
@@ -172,17 +193,6 @@ def Sqaure_off_Position():
             else:
                 resp = 'Failed'
     return resp
-
-
-
-
-
-
-
-
-
-
-
 
 
 
