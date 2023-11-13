@@ -93,9 +93,9 @@ class StrategyFactory(STRATEGY_REPO):
             if self.monitor_stop_live():
                 self.squaring_of_all_position_AT_ONCE()
 
-            # elif datetime.now(self.time_zone).time() > datetime.strptime('15:29:00', "%H:%M:%S").time():
-            #     self.squaring_of_all_position_AT_ONCE()
-            #     self.trade_flag = False
+            elif datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
+                self.squaring_of_all_position_AT_ONCE()
+                self.trade_flag = False
 
 
     def squaring_of_all_position_AT_ONCE(self):
