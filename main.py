@@ -60,7 +60,7 @@ def connect():
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':1,'NSE:NIFTYBANK-INDEX':1}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5,'NSE:NIFTYBANK-INDEX':5}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
@@ -72,10 +72,10 @@ def connect():
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
-                    '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 1},
-                    'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
-                    'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 1},
+        STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
+                    '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
+                    'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 5},
+                    'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 5},
                     }
 
         json = request.get_json()
