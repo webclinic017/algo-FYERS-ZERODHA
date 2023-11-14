@@ -2,7 +2,7 @@ from datetime import datetime,timedelta
 import pandas as pd
 import pytz
 import schedule
-
+import time
 
 class TICKER_:
     BROKER_OBJ = None
@@ -10,31 +10,56 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
+        self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
-        self.schedule_at = 5
+        self.schedule_at = 1
         self.scheduler = schedule.Scheduler()
         self.update_tag = False
         self.hist_df = None
 
-    def get_history(self,symbol, interval, days=4):
+    def get_history(self, symbol, interval, days=4):
+
+        # reinitializing the variables
+        his = []
+        self.hist_df = pd.DataFrame()
+
         range_to = datetime.now(self.time_zone).date()
         range_from = range_to - timedelta(days=days)
         req = {"symbol": symbol, "resolution": f"{interval}", "date_format": "1", "range_from": str(range_from),
                "range_to": str(range_to), "cont_flag": "1"}
-        his = self.BROKER_OBJ.history(req)['candles']
-        self.hist_df = pd.DataFrame(his, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        self.hist_df['timestamp'] = pd.to_datetime(self.hist_df['timestamp'],unit='s')
-        self.hist_df['timestamp'] = self.hist_df['timestamp'].dt.tz_localize('utc').dt.tz_convert('Asia/Kolkata')
-        self.hist_df['timestamp'] = self.hist_df['timestamp'].dt.tz_localize(None)
-        self.hist_df = self.hist_df.set_index('timestamp')
+        try:
+            his = self.BROKER_OBJ.history(req)['candles']
+        except KeyError:
+            retry_count = 0
+            while retry_count <= self.request_retry:
+                resp = self.BROKER_OBJ.history(req)
+                if 'candles' in resp:
+                    his = resp['candles']
+                    break
+                else:
+                    print('Unable to fetch historical data retrying  in few seconds')
+                    time.sleep(2)
+                    retry_count += 1
+
+            else:
+                print('Unable to fetch the data please check your connections and verify with the broker')
+
+        if his:
+            self.hist_df = pd.DataFrame(his, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+            self.hist_df['timestamp'] = pd.to_datetime(self.hist_df['timestamp'], unit='s')
+            self.hist_df['timestamp'] = self.hist_df['timestamp'].dt.tz_localize('utc').dt.tz_convert('Asia/Kolkata')
+            self.hist_df['timestamp'] = self.hist_df['timestamp'].dt.tz_localize(None)
+            self.hist_df = self.hist_df.set_index('timestamp')
         return self.hist_df
 
     def run_update(self):
 
         for ticker,interval in self.ticker_under_strategy.items():
-            self.ticker_space[f"{ticker}"] = self.get_history(ticker,interval)
+            hist = self.get_history(ticker,interval)
+            if not hist.empty:
+                self.ticker_space[f"{ticker}"] = hist
 
         for strategy in self.STRATEGY_RUN.keys():
             self.STRATEGY_RUN[strategy].monitor_signal()
