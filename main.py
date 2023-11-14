@@ -178,6 +178,7 @@ def get_csv():
     )
 @app.route('/get_connection_status')
 def get_connection_status():
+    global connected
     if connected:
         return 'connected'
     else:
