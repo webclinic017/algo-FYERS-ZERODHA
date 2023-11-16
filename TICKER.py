@@ -14,7 +14,7 @@ class TICKER_:
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
-        self.schedule_at = 1
+        self.schedule_at = 5
         self.scheduler = schedule.Scheduler()
         self.update_tag = False
         self.hist_df = None
