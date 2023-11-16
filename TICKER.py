@@ -10,7 +10,7 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
-        self.request_retry = 3
+        self.request_retry = 5
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
@@ -40,7 +40,7 @@ class TICKER_:
                     break
                 else:
                     print('Unable to fetch historical data retrying  in few seconds')
-                    time.sleep(2)
+                    time.sleep(3)
                     retry_count += 1
 
             else:
