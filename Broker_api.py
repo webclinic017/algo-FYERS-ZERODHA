@@ -10,7 +10,7 @@ class BROKER_API:
     def __init__(self):
         self.BROKER_APP = None
         self.socket_opened = None
-        self.token = {'26009':"NSE:NIFTYBANK-INDEX", '26000':"NSE:NIFTY50-INDEX",'39950':'NSE:FINNIFTY-INDEX'}
+        self.token = {'26009':"NSE:NIFTYBANK-INDEX", '26000':"NSE:NIFTY50-INDEX",'26037':'NSE:FINNIFTY-INDEX'}
         self.symbol_on_subscription = []
 
     def login(self):
@@ -28,7 +28,7 @@ class BROKER_API:
     @property
     def get_idx_info(self):
         sub = []
-        typ = ['INDICES','INDICES','NFO']
+        typ = ['INDICES','INDICES','INDICES']
         for s,v in zip(typ,self.token.keys()):
             sub.append(self.BROKER_APP.get_instrument_by_token(s,int(v)))
 
