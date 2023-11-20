@@ -96,6 +96,7 @@ class StrategyFactory(STRATEGY_REPO):
             elif datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
                 self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
+                print('trade_flag' , self.trade_flag)
 
 
     def squaring_of_all_position_AT_ONCE(self):
