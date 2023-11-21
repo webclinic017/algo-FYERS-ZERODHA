@@ -78,7 +78,7 @@ class StrategyFactory(STRATEGY_REPO):
             self.signal = 1 if self.long_signal() else(-1 if self.short_signal() else 0)
             if self.signal:
                  self.scheduler.every(4).seconds.do(self.Open_position)
-        print('tradeflag',self.tradeflag ,datetime.now(self.time_zone).time())
+        print('tradeflag',self.trade_flag ,datetime.now(self.time_zone).time())
             
             
         if self.position:
