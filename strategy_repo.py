@@ -44,7 +44,7 @@ class STRATEGY_REPO:
         signal = False
         if datetime.now(self.time_zone).replace(microsecond=0,second=0) in self.time_series:
             self.df = self.TICKER.get_data(self.symbol, f'{self.interval}T')
-            print('signal_after',self.strategy_name)
+            print('signal_after',self.strategy_name , self.df.index[-1)
             if self.strategy_name == '3EMA':
                 spr = 0.015
                 rsi_val_up = 64.79724715724147
