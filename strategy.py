@@ -78,8 +78,9 @@ class StrategyFactory(STRATEGY_REPO):
             self.signal = 1 if self.long_signal() else(-1 if self.short_signal() else 0)
             if self.signal:
                  self.scheduler.every(4).seconds.do(self.Open_position)
-
-
+        print('tradeflag',self.tradeflag ,datetime.now(self.time_zone).time())
+            
+            
         if self.position:
             self.trailing_stops_candle_close()
             if self.monitor_stops_candle_close():
