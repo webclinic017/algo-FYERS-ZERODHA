@@ -88,15 +88,15 @@ class StrategyFactory(STRATEGY_REPO):
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
+        if self.trade_flag:
+            if self.position:
+                if self.monitor_stop_live():
+                    self.squaring_of_all_position_AT_ONCE()
 
-        if self.position and self.trade_flag:
-            if self.monitor_stop_live():
-                self.squaring_of_all_position_AT_ONCE()
-
-            elif datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
-                self.squaring_of_all_position_AT_ONCE()
+            if datetime.now(self.time_zone).time() >= datetime.strptime('15:29:00', "%H:%M:%S").time():
+                if self.position:
+                    self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
-                print('trade_flag' , self.trade_flag)
 
 
     def squaring_of_all_position_AT_ONCE(self):
@@ -127,7 +127,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.stop = 0
         self.OrderManger.refresh_variable()
         # symbol to unsubscribe
-        self.instrument_under_strategy =[]
+        self.instrument_under_strategy = []
 
 
 
