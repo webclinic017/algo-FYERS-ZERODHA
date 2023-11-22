@@ -27,7 +27,7 @@ def on_tick():
     while connected:
         if BROKER_APP:
             BROKER_APP.on_tick()
-            time.sleep(1)
+          
     else:
         BROKER_APP.stop_websocket()
 
