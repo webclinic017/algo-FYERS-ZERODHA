@@ -1,7 +1,6 @@
 from datetime import datetime,timedelta
 import pandas as pd
 import pytz
-import schedule
 import time
 
 class TICKER_:
@@ -10,13 +9,12 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
-        self.request_retry = 5
+        self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
-        self.schedule_at = 5
-        self.scheduler = schedule.Scheduler()
         self.update_tag = False
+        self.last_execution = 0
         self.hist_df = None
 
     def get_history(self, symbol, interval, days=4):
@@ -40,7 +38,7 @@ class TICKER_:
                     break
                 else:
                     print('Unable to fetch historical data retrying  in few seconds')
-                    time.sleep(3)
+                    time.sleep(2)
                     retry_count += 1
 
             else:
@@ -55,7 +53,8 @@ class TICKER_:
         return self.hist_df
 
     def run_update(self):
-        print('run_update called',datetime.now(self.time_zone).time())
+        print(f'run update:{datetime.now(self.time_zone)}')
+
         for ticker,interval in self.ticker_under_strategy.items():
             hist = self.get_history(ticker,interval)
             if not hist.empty:
@@ -64,15 +63,13 @@ class TICKER_:
         for strategy in self.STRATEGY_RUN.keys():
             self.STRATEGY_RUN[strategy].monitor_signal()
 
-
     def run_scheduler(self):
-        if not self.scheduler.jobs:
-            now = datetime.now(self.time_zone)
-            if now.minute % self.schedule_at == 0 and now.second > 5 and now.second < 8:
-                self.scheduler.every(self.schedule_at).minutes.do(self.run_update)
-                print(f'task scheduled:{self.scheduler.jobs}')
-
-        self.scheduler.run_pending()
+        current_minute = int(time.time())
+        now = datetime.now(self.time_zone)
+        if (now.minute % 5 == 0) and (now.second > 5) and (now.second < 8):
+            if (current_minute - self.last_execution) >= 300:
+                self.run_update()
+                self.last_execution = current_minute
 
     def get_data(self,symbol,interval):
         try:
