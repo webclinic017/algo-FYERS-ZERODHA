@@ -60,12 +60,11 @@ class STRATEGY_REPO:
                 cond3 = ((ema_1.iloc[-1] > self.df['close'].iloc[-2]) & (ema_1.iloc[-1] < self.df['close'].iloc[-1]) &
                          (self.df['open'].iloc[-1] < self.df['close'].iloc[-1]))
 
-                # signal = cond1 & cond2 & cond3
-                signal = 1
+                signal = cond1 & cond2 & cond3
+
 
                 if signal:
-                    factor = 0.5
-                    # factor = 2.5
+                    factor = 2.5
                     lower_bound = self.df['close'] - (factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9))
                     self.stop = lower_bound.iloc[-1]
 
@@ -82,12 +81,11 @@ class STRATEGY_REPO:
                 cond1 = (self.df['close'].iloc[-1] > ma_1.iloc[-1]) & (ma_1.iloc[-1] > ma_2.iloc[-1])
                 cond2 = (ang.iloc[-1] > ma_ang) & (rsi_val < rsi.iloc[-1])
 
-                # signal = cond1 & cond2
-                signal = 1
+                signal = cond1 & cond2
+       
 
                 if signal:
-                    factor = 0.5
-                    # factor = 2.5
+                    factor = 2.5
                     lower_bound = self.df['close'] - (factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5))
                     self.stop = lower_bound.iloc[-1]
 
@@ -115,8 +113,8 @@ class STRATEGY_REPO:
                 spr = self.df['close']/sma
                 quan_down = spr.quantile(q_dn)
 
-                # signal = (quan_down > spr.iloc[-2]) & (quan_down < spr.iloc[-1])
-                signal = 1
+                signal = (quan_down > spr.iloc[-2]) & (quan_down < spr.iloc[-1])
+ 
 
                 if signal:
                     factor = 0.5
@@ -152,15 +150,13 @@ class STRATEGY_REPO:
 
         if self.position > 0:
             if self.strategy_name == '3EMA':
-                factor = 0.75
-                # factor = 2.5
+                factor = 2.5
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 9)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
 
             elif self.strategy_name == '15_119_MA':
-                factor = 0.75
-                # factor = 2.5
+                factor = 2.5
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
@@ -170,15 +166,13 @@ class STRATEGY_REPO:
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
             elif self.strategy_name == 'Mean_Rev_BNF':
-                factor = 0.75
-                # factor = 1.4036476588918747
+                factor = 1.4036476588918747
                 lower_bound = self.df['close'] - factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = max(self.stop, lower_bound.iloc[-1])
 
         elif self.position < 0:
             if self.strategy_name == 'Mean_Rev_BNF':
-                factor = 0.75
-                # factor = 1.4036476588918747
+                factor = 1.4036476588918747
                 upper_bound = self.df['close'] + factor * ta.atr(self.df['high'], self.df['low'], self.df['close'], 5)
                 self.stop = min(upper_bound.iloc[- 1],self.stop)
 
