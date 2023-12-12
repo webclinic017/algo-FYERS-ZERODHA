@@ -39,7 +39,7 @@ class STRATEGY_REPO:
         self.generate_timeseries()
 
     def load_model(self):
-        with open(f'{self.strategy_name}', 'rb') as file:
+        with open(f'{self.strategy_name}.pkl', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
 
