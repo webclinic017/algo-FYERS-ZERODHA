@@ -130,38 +130,28 @@
             <th>MTM</th>
         </tr>
         <tr>
-            <td id="strategy_3EMA">N/A</td>
-            <td id="status_3EMA">N/A</td>
-            <td id="position_3EMA">N/A</td>
-            <td id="mtm_3EMA">N/A</td>
+            <td id="strategy_TREND_EMA">N/A</td>
+            <td id="status_TREND_EMA">N/A</td>
+            <td id="position_TREND_EMA">N/A</td>
+            <td id="mtm_TREND_EMA">N/A</td>
 
         </tr>
 
         <tr>
-            <td id="strategy_15_119_MA">N/A</td>
-            <td id="status_15_119_MA">N/A</td>
-            <td id="position_15_119_MA">N/A</td>
-            <td id="mtm_15_119_MA">N/A</td>
+            <td id="strategy_SharpeRev">N/A</td>
+            <td id="status_SharpeRev">N/A</td>
+            <td id="position_SharpeRev">N/A</td>
+            <td id="mtm_SharpeRev">N/A</td>
 
          </tr>
 
         <tr>
-            <td id="strategy_MA_long_cross">N/A</td>
-            <td id="status_MA_long_cross">N/A</td>
-            <td id="position_MA_long_cross">N/A</td>
-            <td id="mtm_MA_long_cross">N/A</td>
+            <td id="strategy_ZSCORE">N/A</td>
+            <td id="status_ZSCORE">N/A</td>
+            <td id="position_ZSCORE">N/A</td>
+            <td id="mtm_ZSCORE">N/A</td>
 
          </tr>
-
-        <tr>
-            <td id="strategy_Mean_Rev_BNF">N/A</td>
-            <td id="status_Mean_Rev_BNF">N/A</td>
-            <td id="position_Mean_Rev_BNF">N/A</td>
-            <td id="mtm_Mean_Rev_BNF">N/A</td>
-
-         </tr>
-
-
 
 
 
@@ -169,21 +159,16 @@
   </div>
   <div class="checkboxes">
     <h2>Select Strategy</h2>
-      <label for="3EMA">
-        <input type="checkbox" name="3EMA" value="3EMA" id="3EMA"> 3EMA
+      <label for="TREND_EMA">
+        <input type="checkbox" name="TREND_EMA" value="TREND_EMA" id="TREND_EMA"> TREND_EMA
       </label>
 
-      <label for="15_119_MA" >
-        <input type="checkbox" name="15_119_MA" value="15_119_MA" id="15_119_MA"> 15_119_MA
+      <label for="SharpeRev" >
+        <input type="checkbox" name="SharpeRev" value="SharpeRev" id="SharpeRev"> SharpeRev
       </label>
 
-      <label for=MA_long_cross>
-        <input type="checkbox" name="MA_long_cross" value="MA_long_cross" id="MA_long_cross"> MA_long_cross
-      </label>
-
-
-      <label for=Mean_Rev_BNF>
-        <input type="checkbox" name="Mean_Rev_BNF" value="Mean_Rev_BNF" id="Mean_Rev_BNF"> Mean_Rev_BNF
+      <label for=ZSCORE>
+        <input type="checkbox" name="ZSCORE" value="ZSCORE" id="ZSCORE"> ZSCORE
       </label>
 
 
@@ -223,10 +208,9 @@
     <form method="POST" action="/Square_off_Position">
         <label for=Square_off_strategy>Select Strategy:</label>
         <select name="Square_off_strategy" id="Square_off_strategy">
-            <option value="3EMA">3 EMA</option>
-            <option value="15_119_MA">15_119_MA</option>
-            <option value="MA_long_cross">MA_long_cross</option>
-            <option value="Mean_Rev_BNF">Mean_Rev_BNF</option>
+            <option value="TREND_EMA">3 EMA</option>
+            <option value="SharpeRev">15_119_MA</option>
+            <option value="ZSCORE">MA_long_cross</option>
         </select>
         <button type="submit">SQUARE-OFF</button>
     </form>
@@ -239,25 +223,20 @@
   <script>
     function fetchPosition() {
         $.get('/update_positions', function (data) {
-            $('#strategy_3EMA').text(data['3EMA'].STRATEGY_NAME);
-            $('#status_3EMA').text(data['3EMA'].STATUS);
-            $('#position_3EMA').text(data['3EMA'].POSITION);
-            $('#mtm_3EMA').text(data['3EMA'].MTM);
+            $('#strategy_TREND_EMA').text(data['TREND_EMA'].STRATEGY_NAME);
+            $('#status_TREND_EMA').text(data['TREND_EMA'].STATUS);
+            $('#position_TREND_EMA').text(data['TREND_EMA'].POSITION);
+            $('#mtm_TREND_EMA').text(data['TREND_EMA'].MTM);
 
-            $('#strategy_15_119_MA').text(data['15_119_MA'].STRATEGY_NAME);
-            $('#status_15_119_MA').text(data['15_119_MA'].STATUS);
-            $('#position_15_119_MA').text(data['15_119_MA'].POSITION);
-            $('#mtm_15_119_MA').text(data['15_119_MA'].MTM);
+            $('#strategy_SharpeRev').text(data['SharpeRev'].STRATEGY_NAME);
+            $('#status_SharpeRev').text(data['SharpeRev'].STATUS);
+            $('#position_SharpeRev').text(data['SharpeRev'].POSITION);
+            $('#mtm_SharpeRev').text(data['SharpeRev'].MTM);
 
-            $('#strategy_MA_long_cross').text(data['MA_long_cross'].STRATEGY_NAME);
-            $('#status_MA_long_cross').text(data['MA_long_cross'].STATUS);
-            $('#position_MA_long_cross').text(data['MA_long_cross'].POSITION);
-            $('#mtm_MA_long_cross').text(data['MA_long_cross'].MTM);
-
-            $('#strategy_Mean_Rev_BNF').text(data['Mean_Rev_BNF'].STRATEGY_NAME);
-            $('#status_Mean_Rev_BNF').text(data['Mean_Rev_BNF'].STATUS);
-            $('#position_Mean_Rev_BNF').text(data['Mean_Rev_BNF'].POSITION);
-            $('#mtm_Mean_Rev_BNF').text(data['Mean_Rev_BNF'].MTM);
+            $('#strategy_ZSCORE').text(data['ZSCORE'].STRATEGY_NAME);
+            $('#status_ZSCORE').text(data['ZSCORE'].STATUS);
+            $('#position_ZSCORE').text(data['ZSCORE'].POSITION);
+            $('#mtm_ZSCORE').text(data['ZSCORE'].MTM);
 
 
         });
@@ -307,11 +286,9 @@
         connectionStatus.textContent = 'Connecting...'; // Display a message while connecting
 
 <!--    strategy selector-->
-        const is3EMASelected = document.querySelector('input[name="3EMA"]').checked;
-        const is15_119_MASelected = document.querySelector('input[name="15_119_MA"]').checked;
-        const isMA_long_crossSelected = document.querySelector('input[name="MA_long_cross"]').checked;
-        const isMA_long_Mean_Rev_BNFSelected = document.querySelector('input[name="Mean_Rev_BNF"]').checked;
-
+        const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
+        const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
+        const isZSCORESelected = document.querySelector('input[name="ZSCORE"]').checked;
 
 <!--    expiry-->
         const BANK_NIFTY_EXP = document.querySelector('input[name="BankNifty_expiry"]').value;
@@ -320,12 +297,9 @@
 
         // Create the selected strategy and expiry objects
         const STRATEGY_SELECTED = {
-            '3EMA': is3EMASelected,
-            '15_119_MA': is15_119_MASelected,
-            'MA_long_cross':isMA_long_crossSelected,
-            'Mean_Rev_BNF':isMA_long_Mean_Rev_BNFSelected,
-
-
+            'TREND_EMA': isTREND_EMASelected,
+            'SharpeRev': isSharpRevSelected,
+            'ZSCORE':isZSCORESelected,
 
         };
 
