@@ -4,17 +4,17 @@ import numpy as np
 import pandas_ta as ta
 import pickle as pk
 
+
 def line_angle(df_, n):
     angle = [np.nan] * len(df_)
     for i in range(n, len(df_)):
         angle[i] = np.arctan((df_[i] - df_[i-n]) / n) * 180 / np.pi
     return pd.Series(angle ,index = df_.index)
-def calculate_MOM_Burst( dt ,lookback,dev):
+def calculate_MOM_Burst( dt ,lookback):
 
     candle_range = dt['high']-dt['low']
-    mean_range = candle_range.rolling(window  = lookback).mean()
+    mean_range = candle_range.rolling(window = lookback).mean()
     std_range = candle_range.rolling(window = lookback).std()
-    BAND = mean_range + dev*std_range
     mom_burst = (candle_range-mean_range)/std_range
 
     return mom_burst, mean_range
@@ -29,6 +29,7 @@ class STRATEGY_REPO:
         self.symbol = symbol
         self.position = 0
         self.STR_MTM = 0
+        self.stops = 0
         self.interval = interval
         self.upper_bound = None
         self.lower_bound = None
@@ -38,8 +39,7 @@ class STRATEGY_REPO:
         self.generate_timeseries()
 
     def load_model(self):
-        print(f'{self.strategy_name}.pkl')
-        with open(f'{self.strategy_name}.pkl', 'rb') as file:
+        with open(f'{self.strategy_name}', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
 
@@ -64,7 +64,7 @@ class STRATEGY_REPO:
             param = {'atr_p': 6.7925871327746705, 'dfactor': -15.295860712288212, 'factor': 1.2998100036407099, 'lags_sharpe': 8.196900677085193,  'lookback': 2.111490940149929,  'normal_window': 135.54978793309067, 'q_dn': 0.0466444187678002, 'q_up': 0.9990729998055132, 'rsi_p': 6.86580583920249, 'window': 9.504009982131006}
 
         elif self.strategy_name == 'ZSCORE':
-            param = {'atr_p': 7.48244520895104, 'dev': 3.3985276159559925, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
+            param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
 
         return param
 
@@ -106,7 +106,7 @@ class STRATEGY_REPO:
         return standardized_features.dropna(axis=0)
 
 
-    def Sharpe_Rev(self , lookback, q_dn ,q_up, rsi_p, window, normal_window  ,  lags_sharpe , dfactor , factor =None, atr_p = None):
+    def Sharpe_Rev(self,lookback, q_dn ,q_up, rsi_p, window, normal_window ,lags_sharpe , dfactor , factor =None, atr_p = None):
         lookback = int(lookback)
         window = int(window)
         normal_window = int(normal_window)
@@ -181,7 +181,7 @@ class STRATEGY_REPO:
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
 
-    def ZSCORE(self,lookback , rsi_p , normal_window, dev , lags_range, dfactor, factor = None, atr_p = None):
+    def ZSCORE(self,lookback , rsi_p , normal_window, lags_range, dfactor, factor = None, atr_p = None):
         features = pd.DataFrame()
         #   conversion of variables
         lookback = int(lookback)
@@ -191,7 +191,7 @@ class STRATEGY_REPO:
         lags = int(lags_range)
 
         #   getting dynamic indicator values
-        v1, v2, v3, v4 = self.Dynamic_Indicator_ZSCORE( lookback, rsi_p, dev, dfactor)
+        v1, v2, v3, v4 = self.Dynamic_Indicator_ZSCORE( lookback, rsi_p, dfactor)
         candle_range = self.dt['high'] - self.dt['low']
 
         features['mom_burst'] = v1
@@ -292,21 +292,21 @@ class STRATEGY_REPO:
 
         return ema, angle_1, angle_2, vol
 
-    def Dynamic_Indicator_ZSCORE( self, window, rsi_p, dev, dfactor):
+    def Dynamic_Indicator_ZSCORE( self, window, rsi_p, dfactor):
         UP = 0.0025106634457647357
         DN = 0.001488458217788889
 
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
         vol = log_return.ewm(span=10).std()
 
-        #       setting the window lenght dynamically
+        # setting the window length dynamically
         WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
         WIN_DN = (window + dfactor) if (window + dfactor) >= 2 else window
 
         #       calculating dynamic value of mom burst
-        mom_burst, mean_range = calculate_MOM_Burst(self.dt, window, dev)
-        mom_burst_UP, mean_range_UP = calculate_MOM_Burst(self.dt, WIN_UP, dev)
-        mom_burst_DN, mean_range_DN = calculate_MOM_Burst(self.dt, WIN_DN, dev)
+        mom_burst, mean_range = calculate_MOM_Burst(self.dt, window)
+        mom_burst_UP, mean_range_UP = calculate_MOM_Burst(self.dt, WIN_UP)
+        mom_burst_DN, mean_range_DN = calculate_MOM_Burst(self.dt, WIN_DN)
 
         #       calculating dynamic window
         WIN_UP_RSI = (rsi_p - dfactor) if (rsi_p - dfactor) >= 2 else rsi_p
@@ -355,12 +355,19 @@ class STRATEGY_REPO:
 
         upper_bound = self.dt['close'] + (param['factor'] * atr)
         lower_bound = self.dt['close'] - (param['factor'] * atr)
-        return upper_bound , lower_bound
+        return upper_bound,lower_bound
+
+    def Set_Stops(self):
+            if self.position and not self.stops:
+                self.upper_bound,self.lower_bound = self.Dynamic_Stops()
+                self.stops = self.lower_bound.iloc[-1] if self.position > 0 else self.upper_bound.iloc[-1]
 
     def trailing_stops_candle_close(self):
+        self.Set_Stops()
         if self.is_valid_time_zone():
             self.dt = self.TICKER.get_data(self.symbol, f'{self.interval}T')
             self.upper_bound,self.lower_bound = self.Dynamic_Stops()
+            self.stops = max(self.lower_bound.iloc[-1],self.stops) if self.position > 0 else min(self.upper_bound.iloc[-1],self.stops)
 
     def monitor_stop_live(self):
         hit = False
@@ -368,10 +375,12 @@ class STRATEGY_REPO:
         if self.position:
             spot = self.LIVE_FEED.get_ltp(self.symbol)
             if (self.position > 0) and (spot > 0):
-                if self.lower_bound.iloc[-1] > spot:
+                if self.stops > spot:
+                    self.stops = 0
                     hit = True
             elif (self.position < 0) and (spot > 0):
-                if self.upper_bound.iloc[-1] < spot:
+                if self.stops < spot:
+                    self.stops = 0
                     hit = True
 
         return hit
