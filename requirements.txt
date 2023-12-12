@@ -11,4 +11,4 @@ requests
 schedule
 pytz
 pya3
-xgboost=='2.0.2'
+xgboost
