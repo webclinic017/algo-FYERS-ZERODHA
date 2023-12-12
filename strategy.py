@@ -25,6 +25,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.scheduler = schedule.Scheduler()
 
 
+
     def get_instrument(self, option_type, step):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
@@ -75,17 +76,14 @@ class StrategyFactory(STRATEGY_REPO):
     def monitor_signal(self):
         # updating ticker space
         if not self.position and self.trade_flag:
-            self.signal = 1 if self.long_signal() else(-1 if self.short_signal() else 0)
+            self.signal = self.get_signal()
             if self.signal:
                  self.scheduler.every(4).seconds.do(self.Open_position)
-        print('tradeflag',self.trade_flag ,datetime.now(self.time_zone).time())
-            
-            
+
+        print(f'Monitor signal : {datetime.now(self.time_zone)} : {self.strategy_name}')
+
         if self.position:
             self.trailing_stops_candle_close()
-            if self.monitor_stops_candle_close():
-                self.squaring_of_all_position_AT_ONCE()
-
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
@@ -98,7 +96,6 @@ class StrategyFactory(STRATEGY_REPO):
                 if self.position:
                     self.squaring_of_all_position_AT_ONCE()
                 self.trade_flag = False
-
 
     def squaring_of_all_position_AT_ONCE(self):
         success = False
