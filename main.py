@@ -27,7 +27,7 @@ def on_tick():
     while connected:
         if BROKER_APP:
             BROKER_APP.on_tick()
-          
+            time.sleep(1)
     else:
         BROKER_APP.stop_websocket()
 
@@ -71,11 +71,11 @@ def connect():
         StrategyFactory.LIVE_FEED = BROKER_APP
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
+
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'3EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
-                    '15_119_MA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 10},
-                    'MA_long_cross':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 30},
-                    'Mean_Rev_BNF': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 5},
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 5},
+                    'ZSCORE':{'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX', 'interval': 5},
                     }
 
         json = request.get_json()
