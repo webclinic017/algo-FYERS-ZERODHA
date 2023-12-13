@@ -95,6 +95,7 @@ class STRATEGY_REPO:
 
     def Normalization(self,features, normal_window):
         # Calculate the mean values using a rolling window
+        features = features.dropna(axis =0)
         mean_val = features.rolling(window=normal_window).mean()
 
         # Calculate the standard deviation values using a rolling window
