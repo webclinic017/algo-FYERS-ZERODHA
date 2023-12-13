@@ -18,7 +18,7 @@ class TICKER_:
         self.last_execution = 0
         self.hist_df = None
 
-    def get_history(self, symbol, interval, days=15):
+    def get_history(self, symbol, interval, days=100):
 
         # reinitializing the variables
         his = []
