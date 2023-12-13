@@ -60,7 +60,7 @@ class STRATEGY_REPO:
         param  = None
         if self.strategy_name == 'TREND_EMA':
             param = {'atr_p': 4.092838367992565, 'dfactor': -2.985501937441061, 'ema': 3.4811469724876796, 'factor': 1.4310393281932097,  'lags_trend': 7.2366422496508065,  'lookback_1': 4.7709018776363585, 'lookback_2': 9.988958079213829,  'normal_window': 198.1862263075428, 'rsi_p': 4.522014227783339}
-        elif self.strategy_name == 'SharpRev':
+        elif self.strategy_name == 'SharpeRev':
             param = {'atr_p': 6.7925871327746705, 'dfactor': -15.295860712288212, 'factor': 1.2998100036407099, 'lags_sharpe': 8.196900677085193,  'lookback': 2.111490940149929,  'normal_window': 135.54978793309067, 'q_dn': 0.0466444187678002, 'q_up': 0.9990729998055132, 'rsi_p': 6.86580583920249, 'window': 9.504009982131006}
 
         elif self.strategy_name == 'ZSCORE':
@@ -71,7 +71,6 @@ class STRATEGY_REPO:
     def predictor(self,features):
         prediction = self.model.predict(features.values)
         signal = pd.Series(np.where(prediction>0,1, -1),index=features.index)
-        print('signal_before',signal.iloc[-1])
         signal = self.trading_halts(signal)
         return signal.iloc[-1]
 
@@ -91,7 +90,7 @@ class STRATEGY_REPO:
                 features = self.ZSCORE(**self.get_params)
 
             signal = self.predictor(features)
-            print(self.strategy_name ,signal)
+  
         return signal
 
     def Normalization(self,features, normal_window):
