@@ -67,7 +67,7 @@ class STRATEGY_REPO:
             param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
 
         return param
-        
+
     def predictor(self,features):
         prediction = self.model.predict(features.values)
         signal = pd.Series(np.where(prediction>0,1, -1),index=features.index)
@@ -90,7 +90,7 @@ class STRATEGY_REPO:
                 features = self.ZSCORE(**self.get_params)
 
             signal = self.predictor(features)
-  
+
         return signal
 
     def Normalization(self,features, normal_window):
@@ -318,7 +318,7 @@ class STRATEGY_REPO:
         RSI_UP = ta.rsi(self.dt['close'], WIN_UP_RSI)
         RSI_DN = ta.rsi(self.dt['close'], WIN_DN_RSI)
 
-        #       setting dynamic indicator values
+        # setting dynamic indicator values
         rsi[vol >= UP] = RSI_UP[vol >= UP]
         rsi[vol <= DN] = RSI_DN[vol <= DN]
 
