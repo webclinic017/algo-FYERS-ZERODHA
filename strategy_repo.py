@@ -90,7 +90,7 @@ class STRATEGY_REPO:
                 features = self.ZSCORE(**self.get_params)
 
             signal = self.predictor(features)
-
+            print(self.strategy_name ,signal)
         return signal
 
     def Normalization(self,features, normal_window):
