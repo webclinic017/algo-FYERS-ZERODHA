@@ -71,6 +71,7 @@ class STRATEGY_REPO:
     def predictor(self,features):
         prediction = self.model.predict(features.values)
         signal = pd.Series(np.where(prediction>0,1, -1),index=features.index)
+        print('signal_before',signal.iloc[-1])
         signal = self.trading_halts(signal)
         return signal.iloc[-1]
 
