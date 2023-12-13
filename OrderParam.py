@@ -4,24 +4,27 @@
 
 def OrderParam(strategy_name,signal):
     OrderPar  = {}
-    if strategy_name=='3EMA':
+    if strategy_name=='TREND_EMA':
         # directional option selling strategy when upside movement is expected
         if signal == 1:
-            p1 = {'opt':'CE', 'step':-2,'transtype':'BUY','Qty':50}
+            p1 = {'opt':'CE', 'step':-3,'transtype':'BUY','Qty':50}
             OrderPar = {'p1':p1}
 
-    elif strategy_name =='15_119_MA':
-        if signal == 1:
-            p1 = {'opt': 'CE', 'step': -2, 'transtype': 'BUY', 'Qty': 50}
+        elif signal == -1:
+            p1 = {'opt': 'PE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
             OrderPar = {'p1': p1}
-    elif strategy_name =='MA_long_cross':
+
+    elif strategy_name == 'SharpeRev':
         if signal == 1:
             p1 = {'opt': 'CE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
             OrderPar = {'p1': p1}
+        elif signal == -1:
+            p1 = {'opt': 'PE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
+            OrderPar = {'p1': p1}
 
-    elif strategy_name == 'Mean_Rev_BNF':
+    elif strategy_name == 'ZSCORE':
         if signal == 1:
-            p1 = {'opt': 'CE', 'step': -1, 'transtype': 'BUY', 'Qty': 15}
+            p1 = {'opt': 'CE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
             OrderPar = {'p1': p1}
         elif signal == -1:
             p1 = {'opt': 'PE', 'step': -3, 'transtype': 'BUY', 'Qty': 15}
