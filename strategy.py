@@ -77,6 +77,7 @@ class StrategyFactory(STRATEGY_REPO):
         # updating ticker space
         if not self.position and self.trade_flag:
             self.signal = self.get_signal()
+            print('signal' , self.signal)
             if self.signal:
                  self.scheduler.every(4).seconds.do(self.Open_position)
 
