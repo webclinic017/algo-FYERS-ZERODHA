@@ -9,6 +9,7 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
+        self.update_freq = 5
         self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
@@ -66,7 +67,7 @@ class TICKER_:
     def run_scheduler(self):
         current_minute = int(time.time())
         now = datetime.now(self.time_zone)
-        if (now.minute % 5 == 0) and (now.second > 5) and (now.second < 8):
+        if (now.minute % self.update_freq == 0) and (now.second > 5) and (now.second < 8):
             if (current_minute - self.last_execution) >= 300:
                 self.run_update()
                 self.last_execution = current_minute
