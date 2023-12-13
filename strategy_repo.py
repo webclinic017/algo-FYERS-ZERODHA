@@ -67,11 +67,12 @@ class STRATEGY_REPO:
             param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
 
         return param
-
+        
     def predictor(self,features):
-        prediction = pd.Series(self.model.predict(features.values),index=features.index)
-        prediction = self.trading_halts(prediction)
-        return prediction.iloc[-1]
+        prediction = self.model.predict(features.values)
+        signal = pd.Series(np.where(prediction>0,1, -1),index=features.index)
+        signal = self.trading_halts(signal)
+        return signal.iloc[-1]
 
     def is_valid_time_zone(self):
         return datetime.now(self.time_zone).replace(microsecond=0,second=0) in self.time_series
