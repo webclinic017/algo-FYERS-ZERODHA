@@ -55,6 +55,7 @@ class STRATEGY_REPO:
             self.time_series.append(start_time)
 
 
+
     @property
     def get_params(self):
         param  = None
@@ -88,14 +89,15 @@ class STRATEGY_REPO:
                 features = self.Sharpe_Rev(**self.get_params)
             elif self.strategy_name == 'ZSCORE':
                 features = self.ZSCORE(**self.get_params)
-
             signal = self.predictor(features)
 
         return signal
 
     def Normalization(self,features, normal_window):
-        # Calculate the mean values using a rolling window
+        # dropping nan
         features = features.dropna(axis =0)
+
+        # Calculate the mean values using a rolling window
         mean_val = features.rolling(window=normal_window).mean()
 
         # Calculate the standard deviation values using a rolling window
@@ -116,11 +118,11 @@ class STRATEGY_REPO:
         dfactor = int(dfactor)
 
         features = pd.DataFrame()
-        #   calculating indicators
 
+        #   calculating indicators
         EMA, rsi, spr, = self.Dynamic_Indicator_SharpeRev(lookback, rsi_p, dfactor)
 
-        #   calculating strategy components(spr , quantiles)
+        # calculating strategy components(spr , quantiles)
         features['spr'] = spr
         features['quan_up'] = features['spr'].rolling(window=window).quantile(q_up)
         features['quan_dn'] = features['spr'].rolling(window=window).quantile(q_dn)
@@ -137,13 +139,13 @@ class STRATEGY_REPO:
 
         # concatenate the feature and lag features
         features = pd.concat([features, lag_values], axis=1)
-
         #   normalization the features
+
         normalized_features = self.Normalization(features, normal_window)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
 
-    def TREND_EMA(self,ema,lookback_1,lookback_2,rsi_p,normal_window ,lags_trend,dfactor , factor=None, atr_p = None):
+    def TREND_EMA(self,ema,lookback_1,lookback_2,rsi_p,normal_window ,lags_trend,dfactor,factor=None, atr_p = None):
         # conversion datatype
         ema = int(ema)
         lookback_1 = int(lookback_1)
