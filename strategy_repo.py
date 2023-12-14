@@ -39,7 +39,7 @@ class STRATEGY_REPO:
         self.generate_timeseries()
 
     def load_model(self):
-        with open(f'{self.strategy_name}.pkl', 'rb') as file:
+        with open(f'{self.strategy_name}', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
 
@@ -378,11 +378,11 @@ class STRATEGY_REPO:
         spot = 0
         if self.position:
             spot = self.LIVE_FEED.get_ltp(self.symbol)
-            if (self.position > 0) and (spot > 0):
+            if (self.position > 0) and (spot > 0) and self.stops:
                 if self.stops > spot:
                     self.stops = 0
                     hit = True
-            elif (self.position < 0) and (spot > 0):
+            elif (self.position < 0) and (spot > 0) and self.stops:
                 if self.stops < spot:
                     self.stops = 0
                     hit = True
