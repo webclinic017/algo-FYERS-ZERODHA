@@ -54,7 +54,6 @@ class TICKER_:
         return self.hist_df
 
     def run_update(self):
-        print(f'run update:{datetime.now(self.time_zone)}')
 
         for ticker,interval in self.ticker_under_strategy.items():
             hist = self.get_history(ticker,interval)
