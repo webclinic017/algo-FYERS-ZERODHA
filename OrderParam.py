@@ -30,5 +30,12 @@ def OrderParam(strategy_name,signal):
             p1 = {'opt': 'PE', 'step': 3, 'transtype': 'BUY', 'Qty': 50}
             OrderPar = {'p1': p1}
 
+    elif strategy_name == 'MOM_BURST':
+        if signal == 1:
+            p1 = {'opt': 'CE', 'step': -3, 'transtype': 'BUY', 'Qty': 50}
+            OrderPar = {'p1': p1}
+        elif signal == -1:
+            p1 = {'opt': 'PE', 'step': 3, 'transtype': 'BUY', 'Qty': 50}
+            OrderPar = {'p1': p1}
 
     return OrderPar
