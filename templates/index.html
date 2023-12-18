@@ -153,6 +153,13 @@
 
          </tr>
 
+        <tr>
+            <td id="strategy_MOM_BURST">N/A</td>
+            <td id="status_MOM_BURST">N/A</td>
+            <td id="position_MOM_BURST">N/A</td>
+            <td id="mtm_MOM_BURST">N/A</td>
+
+         </tr>
 
 
     </table>
@@ -171,6 +178,9 @@
         <input type="checkbox" name="ZSCORE" value="ZSCORE" id="ZSCORE"> ZSCORE
       </label>
 
+      <label for=MOM_BURST>
+        <input type="checkbox" name="MOM_BURST" value="MOM_BURST" id="MOM_BURST"> MOM_BURST
+      </label>
 
       <!-- Add more checkboxes for each strategy you have -->
   </div>
@@ -211,6 +221,8 @@
             <option value="TREND_EMA">TREND_EMA</option>
             <option value="SharpeRev">SharpeRev</option>
             <option value="ZSCORE">ZSCORE</option>
+            <option value="MOM_BURST">MOM_BURST</option>
+
         </select>
         <button type="submit">SQUARE-OFF</button>
     </form>
@@ -238,6 +250,11 @@
             $('#position_ZSCORE').text(data['ZSCORE'].POSITION);
             $('#mtm_ZSCORE').text(data['ZSCORE'].MTM);
 
+
+            $('#strategy_MOM_BURST').text(data['MOM_BURST'].STRATEGY_NAME);
+            $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
+            $('#position_MOM_BURST').text(data['MOM_BURST'].POSITION);
+            $('#mtm_MOM_BURST').text(data['MOM_BURST'].MTM);
 
         });
     }
@@ -289,6 +306,7 @@
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isZSCORESelected = document.querySelector('input[name="ZSCORE"]').checked;
+        const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
 
 <!--    expiry-->
         const BANK_NIFTY_EXP = document.querySelector('input[name="BankNifty_expiry"]').value;
@@ -300,7 +318,7 @@
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
             'ZSCORE':isZSCORESelected,
-
+            'MOM_BURST':isMOM_BURSTSelected,
         };
 
         const EXPIRY = {
