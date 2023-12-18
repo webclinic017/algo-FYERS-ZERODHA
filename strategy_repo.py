@@ -67,7 +67,16 @@ class STRATEGY_REPO:
         elif self.strategy_name == 'ZSCORE':
             param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
 
+        elif self.strategy_name == 'MOM_BURST':
+            param = {'lookback': 2, 'normal_window': 182, 'atr_p': 8, 'factor': 1.665951088069996, 'lags_range': 1, 'dfactor': 5}
+
         return param
+
+    @property
+    def get_quantile(self):
+        quantile_UP = {'TREND_EMA':  0.0025106634457647357,'SharpeRev':  0.0025106634457647357,'ZSCORE': 0.0025106634457647357,'MOM_BURST': 0.0019052022355813324}
+        quantile_DN = {'TREND_EMA': 0.001488458217788889,'SharpeRev': 0.001488458217788889,'ZSCORE':0.001488458217788889,'MOM_BURST':0.0009401364610806288}
+        return quantile_UP[self.strategy_name],quantile_DN[self.strategy_name]
 
     def predictor(self,features):
         prediction = self.model.predict(features.values)
@@ -76,7 +85,9 @@ class STRATEGY_REPO:
         return signal.iloc[-1]
 
     def is_valid_time_zone(self):
-        return datetime.now(self.time_zone).replace(microsecond=0,second=0) in self.time_series
+        cond1 = datetime.now(self.time_zone).time() > datetime.strptime('09:30:00', "%H:%M:%S").time()
+        cond2 = datetime.now(self.time_zone).replace(microsecond=0,second=0) in self.time_series
+        return cond1 and cond2
 
     def get_signal(self):
         features = None
@@ -89,6 +100,9 @@ class STRATEGY_REPO:
                 features = self.Sharpe_Rev(**self.get_params)
             elif self.strategy_name == 'ZSCORE':
                 features = self.ZSCORE(**self.get_params)
+            elif self.strategy_name=='MOM_BURST':
+                features = self.MOM_BURST(**self.get_params)
+
             signal = self.predictor(features)
 
         return signal
@@ -139,8 +153,7 @@ class STRATEGY_REPO:
 
         # concatenate the feature and lag features
         features = pd.concat([features, lag_values], axis=1)
-        #   normalization the features
-
+        # normalization the features
         normalized_features = self.Normalization(features, normal_window)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
@@ -218,9 +231,43 @@ class STRATEGY_REPO:
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
 
+    def MOM_BURST(self, lookback, normal_window, lags_range, dfactor , factor =None, atr_p = None):
+
+        features = pd.DataFrame()
+
+        # conversion of variables
+        lookback = int(lookback)
+        normal_window = int(normal_window)
+        dfactor = int(dfactor)
+        lags = int(lags_range)
+
+        #   getting dynamic indicator values
+        v1, v2 = self.Dynamic_Indicator_MOM_BURST(lookback, dfactor)
+        candle_range = self.dt['high'] - self.dt['low']
+
+        features['mom_burst'] = v1
+        features['pct_change'] = self.dt['close'].pct_change()
+        features['range_mean_vs_candle_range'] = candle_range / v2
+        features['mom_burst_hh'] = v1 / v1.rolling(window=lookback).max().shift(1)
+        features['mom_burst_ll'] = v1.rolling(window=lookback).min().shift(1) / v1
+
+        for col in ['range_mean_vs_candle_range', 'mom_burst_hh', 'mom_burst_ll']:
+            features[f'{col}_STD'] = features[col].ewm(span=lookback).std()
+
+        #   calculating lagged values
+        lag_values = pd.DataFrame()
+        for col in features.columns:
+            for lag in range(1, lags):
+                lag_values[f'{col}_{lag}'] = features[col].shift(lag)
+
+        features = pd.concat([features, lag_values], axis=1)
+
+        #   normalization the features
+        normalized_features = self.Normalization(features, normal_window)
+        return normalized_features
+
     def Dynamic_Indicator_SharpeRev(self, window, rsi_p, dfactor):
-        UP = 0.0025106634457647357
-        DN = 0.001488458217788889
+        UP ,DN = self.get_quantile
 
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
         vol = log_return.ewm(span=10).std()
@@ -260,8 +307,7 @@ class STRATEGY_REPO:
         return ema, rsi, spr
 
     def Dynamic_Indicator_TREND_EMA(self, window, lookback_1, lookback_2, dfactor):
-        UP = 0.0025106634457647357
-        DN = 0.001488458217788889
+        UP, DN = self.get_quantile
 
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
         vol = log_return.ewm(span=10).std()
@@ -297,8 +343,7 @@ class STRATEGY_REPO:
         return ema, angle_1, angle_2, vol
 
     def Dynamic_Indicator_ZSCORE( self, window, rsi_p, dfactor):
-        UP = 0.0025106634457647357
-        DN = 0.001488458217788889
+        UP, DN = self.get_quantile
 
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
         vol = log_return.ewm(span=10).std()
@@ -333,13 +378,35 @@ class STRATEGY_REPO:
 
         return mom_burst, rsi, vol, mean_range
 
+    def Dynamic_Indicator_MOM_BURST(self,window, dfactor):
+        UP, DN = self.get_quantile
+
+        log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
+        vol = log_return.ewm(span=10).std()
+
+        # setting the window length dynamically
+        WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
+        WIN_DN = (window + dfactor) if (window + dfactor) >= 2 else window
+
+        #  calculating dynamic value of mom burst
+        mom_burst, mean_range = calculate_MOM_Burst(self.dt, window)
+        mom_burst_UP, mean_range_UP = calculate_MOM_Burst(self.dt, WIN_UP)
+        mom_burst_DN, mean_range_DN = calculate_MOM_Burst(self.dt, WIN_DN)
+
+        mom_burst[vol >= UP] = mom_burst_UP[vol >= UP]
+        mom_burst[vol <= DN] = mom_burst_DN[vol <= DN]
+
+        mean_range[vol >= UP] = mean_range_UP[vol >= UP]
+        mean_range[vol <= DN] = mean_range_DN[vol <= DN]
+
+        return mom_burst, mean_range
+
     def Dynamic_Stops(self):
         param = self.get_params
         window = param['atr_p']
         dfactor = param['dfactor']
 
-        UP = 0.0025106634457647357
-        DN = 0.001488458217788889
+        UP,DN = self.get_quantile
 
         log_return = np.log(self.dt['close']/self.dt['close'].shift(1))
         vol = log_return.ewm(span = 10).std()
@@ -355,7 +422,9 @@ class STRATEGY_REPO:
 
 #       setting dynamic values
         atr[vol>=UP] = ATR_UP[vol>=UP]
-        atr[vol<=DN] = ATR_DN[vol<=DN]
+
+        if self.strategy_name!='MOM_BURST':
+            atr[vol<=DN] = ATR_DN[vol<=DN]
 
         upper_bound = self.dt['close'] + (param['factor'] * atr)
         lower_bound = self.dt['close'] - (param['factor'] * atr)
