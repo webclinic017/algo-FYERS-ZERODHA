@@ -35,7 +35,8 @@ class StrategyFactory(STRATEGY_REPO):
         stk = ATM + interval * step
         instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
         # appending into the list for future use
-        self.instrument_under_strategy.append(instrument)
+        if instrument not in self.instrument_under_strategy:
+            self.instrument_under_strategy.append(instrument)
 
         return instrument
 
