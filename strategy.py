@@ -59,6 +59,7 @@ class StrategyFactory(STRATEGY_REPO):
                 success = self.OrderManger.Add_position(**self.param[instrument])
                 if not success:
                     print(f'Unable to place order for {instrument} please check with broker terminal')
+                    self.refresh_var()
                     break
                 else:
                     self.position = self.signal
