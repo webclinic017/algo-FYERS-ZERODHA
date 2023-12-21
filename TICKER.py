@@ -57,6 +57,7 @@ class TICKER_:
 
         for ticker,interval in self.ticker_under_strategy.items():
             hist = self.get_history(ticker,interval)
+            print('Is_empty', hist.empty,interval)
             if not hist.empty:
                 self.ticker_space[f"{ticker}"] = hist
 
