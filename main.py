@@ -131,9 +131,8 @@ def update_positions():
     global STRATEGY
     global SELECTED_STRATEGY
 
-    POSITION = 0
-
     for strategy in STRATEGY.keys():
+        POSITION = 0
         if strategy in STRATEGY_FAC:
             value = round(STRATEGY_FAC[strategy].STR_MTM, 2)
             POSITION = STRATEGY_FAC[strategy].position
