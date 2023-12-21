@@ -83,11 +83,11 @@ class BROKER_API:
 
     def get_ltp(self, symbol):
 
-        try:
+        # try:
             return self.ltp[symbol]
 
-        except KeyError:
-            return 0
+        # except KeyError:
+        #     return 0
 
     def stop_websocket(self):
         self.BROKER_APP.stop_websocket()
