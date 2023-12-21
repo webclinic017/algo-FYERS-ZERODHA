@@ -35,8 +35,7 @@ class StrategyFactory(STRATEGY_REPO):
         stk = ATM + interval * step
         instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
         # appending into the list for future use
-        if instrument not in self.instrument_under_strategy:
-            self.instrument_under_strategy.append(instrument)
+        self.instrument_under_strategy.append(instrument)
 
         return instrument
 
@@ -59,7 +58,6 @@ class StrategyFactory(STRATEGY_REPO):
                 success = self.OrderManger.Add_position(**self.param[instrument])
                 if not success:
                     print(f'Unable to place order for {instrument} please check with broker terminal')
-                    self.refresh_var()
                     break
                 else:
                     self.position = self.signal
