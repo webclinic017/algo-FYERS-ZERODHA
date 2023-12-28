@@ -34,12 +34,25 @@ class STRATEGY_REPO:
         self.upper_bound = None
         self.lower_bound = None
         self.dt = None
-        self.model = self.load_model()
+        self.model = None
+        self.model_1 = None
+        self.model_2 = None
+        self.quantile_DN = {}
+        self.quantile_UP = {}
+        self.load_model()
         self.time_series = []
         self.generate_timeseries()
 
     def load_model(self):
-        with open(f'{self.strategy_name}.pkl', 'rb') as file:
+        if self.strategy_name == 'SharpeRev' or self.strategy_name == 'TREND_EMA':
+            self.model_1 = self.get_model(n=1)
+            self.model_2 = self.get_model(n=2)
+        else:
+            self.model = self.get_model()
+
+    def get_model(self,n=0):
+        file_name = f'{self.strategy_name}' if n == 0 else f'{self.strategy_name}_{n}'
+        with open(f'{file_name}.pkl', 'rb') as file:
             loaded_model = pk.load(file)
         return loaded_model
 
@@ -55,18 +68,15 @@ class STRATEGY_REPO:
             self.time_series.append(start_time)
 
 
-
     @property
     def get_params(self):
-        param  = None
+        param = None
         if self.strategy_name == 'TREND_EMA':
-            param = {'atr_p': 4.092838367992565, 'dfactor': -2.985501937441061, 'ema': 3.4811469724876796, 'factor': 1.4310393281932097,  'lags_trend': 7.2366422496508065,  'lookback_1': 4.7709018776363585, 'lookback_2': 9.988958079213829,  'normal_window': 198.1862263075428, 'rsi_p': 4.522014227783339}
+            param = {'QLVL': 0.22381997538692983,'ema': 11,'lookback_1': 7,'lookback_2': 16,'atr_p': 4,'factor': 1.1650394838756581,'lags_trend': 5,'dfactor': -8,'rsi_p': 3,'normal_window': 6}
         elif self.strategy_name == 'SharpeRev':
-            param = {'atr_p': 6.7925871327746705, 'dfactor': -15.295860712288212, 'factor': 1.2998100036407099, 'lags_sharpe': 8.196900677085193,  'lookback': 2.111490940149929,  'normal_window': 135.54978793309067, 'q_dn': 0.0466444187678002, 'q_up': 0.9990729998055132, 'rsi_p': 6.86580583920249, 'window': 9.504009982131006}
-
+            param = {'window': 4,'lookback': 2,'q_up': 1.0,'q_dn': 0.1,'normal_window': 141,'atr_p': 8,'factor': 1.75,'lags_sharpe': 8,'dfactor': -20,'QLVL': 0.95}
         elif self.strategy_name == 'ZSCORE':
             param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
-
         elif self.strategy_name == 'MOM_BURST':
             param = {'lookback': 2, 'normal_window': 182, 'atr_p': 8, 'factor': 1.665951088069996, 'lags_range': 1, 'dfactor': 5}
 
@@ -74,15 +84,26 @@ class STRATEGY_REPO:
 
     @property
     def get_quantile(self):
-        quantile_UP = {'TREND_EMA':  0.0025106634457647357,'SharpeRev':  0.0025106634457647357,'ZSCORE': 0.0025106634457647357,'MOM_BURST': 0.0019052022355813324}
-        quantile_DN = {'TREND_EMA': 0.001488458217788889,'SharpeRev': 0.001488458217788889,'ZSCORE':0.001488458217788889,'MOM_BURST':0.0009401364610806288}
-        return quantile_UP[self.strategy_name],quantile_DN[self.strategy_name]
+        if self.model_1 and self.model_2:
+            param = self.get_params
+            log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
+            vol = log_return.ewm(span=param['normal_window']).std()
+            self.quantile_DN[self.strategy_name] = vol.rolling(window=param['normal_window']).quantile(param['QLVL'])
+            self.quantile_UP[self.strategy_name] = vol.rolling(window=param['normal_window']).quantile(param['QLVL'])
+            if vol.iloc[-1] < self.quantile_DN[self.strategy_name].iloc[-1]:
+                self.model = self.model_1
+            elif vol.iloc[-1] > self.quantile_UP[self.strategy_name].iloc[-1]:
+                self.model = self.model_2
+        else:
+            self.quantile_UP = {'ZSCORE': 0.0025106634457647357,'MOM_BURST': 0.0019052022355813324}
+            self.quantile_DN = {'ZSCORE':0.001488458217788889,'MOM_BURST':0.0009401364610806288}
+
+        return self.quantile_UP[self.strategy_name],self.quantile_DN[self.strategy_name]
 
     def predictor(self,features):
-        prediction = self.model.predict(features.values)
-        signal = pd.Series(np.where(prediction>0,1, -1),index=features.index)
-        signal = self.trading_halts(signal)
-        return signal.iloc[-1]
+        prediction = self.model.predict(features.values[-1].reshape(1,-1))
+        signal = 1 if prediction[0] else -1
+        return signal
 
     def is_valid_time_zone(self):
         cond1 = datetime.now(self.time_zone).time() > datetime.strptime('09:30:00', "%H:%M:%S").time()
@@ -100,7 +121,7 @@ class STRATEGY_REPO:
                 features = self.Sharpe_Rev(**self.get_params)
             elif self.strategy_name == 'ZSCORE':
                 features = self.ZSCORE(**self.get_params)
-            elif self.strategy_name=='MOM_BURST':
+            elif self.strategy_name == 'MOM_BURST':
                 features = self.MOM_BURST(**self.get_params)
 
             signal = self.predictor(features)
@@ -123,8 +144,7 @@ class STRATEGY_REPO:
         # Drop NaN values that may result from the rolling window
         return standardized_features.dropna(axis=0)
 
-
-    def Sharpe_Rev(self,lookback, q_dn ,q_up, rsi_p, window, normal_window ,lags_sharpe , dfactor , factor =None, atr_p = None):
+    def Sharpe_Rev(self,lookback, q_dn,q_up, window,normal_window,lags_sharpe,dfactor,QLVL=None,factor=None, atr_p=None):
         lookback = int(lookback)
         window = int(window)
         normal_window = int(normal_window)
@@ -133,17 +153,14 @@ class STRATEGY_REPO:
 
         features = pd.DataFrame()
 
-        #   calculating indicators
-        EMA, rsi, spr, = self.Dynamic_Indicator_SharpeRev(lookback, rsi_p, dfactor)
-
+        # calculating indicators
+        EMA, spr, = self.Dynamic_Indicator_SharpeRev(lookback,dfactor,normal_window)
         # calculating strategy components(spr , quantiles)
         features['spr'] = spr
         features['quan_up'] = features['spr'].rolling(window=window).quantile(q_up)
         features['quan_dn'] = features['spr'].rolling(window=window).quantile(q_dn)
         features['spr_quan_up'] = features['quan_up'] / features['spr']
         features['spr_quan_dn'] = features['spr'] / features['quan_dn']
-        features['rsi_UP'] = rsi / 55
-        features['rsi_DN'] = 45 / rsi
         features['sentiment'] = EMA / self.dt['close']
 
         lag_values = pd.DataFrame()
@@ -158,7 +175,7 @@ class STRATEGY_REPO:
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
 
-    def TREND_EMA(self,ema,lookback_1,lookback_2,rsi_p,normal_window ,lags_trend,dfactor,factor=None, atr_p = None):
+    def TREND_EMA(self,ema,lookback_1,lookback_2,rsi_p,normal_window,lags_trend,dfactor,QLVL=None,factor=None,atr_p=None):
         # conversion datatype
         ema = int(ema)
         lookback_1 = int(lookback_1)
@@ -167,24 +184,26 @@ class STRATEGY_REPO:
         lags = int(lags_trend)
 
         #   importing the dynamic indicators values
-        v1, v2, v3, v4 = self.Dynamic_Indicator_TREND_EMA(ema, lookback_1, lookback_2, dfactor)
+        v1,v2,v3,v4,v5 = self.Dynamic_Indicator_TREND_EMA(ema, lookback_1,lookback_2,dfactor,normal_window,rsi_p)
         features = pd.DataFrame()
 
-        rsi = ta.rsi(self.dt['close'], rsi_p)
-
-        #   creating dataset for features
         features['ema'] = v1
-        features['rsi'] = rsi
+        features['rsi'] = v5
         features['angle_1'] = v2
         features['angle_2'] = v3
         features['vol'] = v4
-        features['rsi_UP'] = rsi / 55
-        features['rsi_DN'] = 45 / rsi
         features['ema_close'] = features['ema'] / self.dt['close']
         features['angle_ratio'] = features['angle_1'] / features['angle_2']
         features['range_vol_1'] = (self.dt['high'] - self.dt['low'].shift(1)).rolling(window=lookback_1).std()
         features['range_vol_2'] = (self.dt['high'] - self.dt['low'].shift(1)).rolling(window=lookback_2).std()
         features['range_ratio'] = features['range_vol_1'] / features['range_vol_2']
+        features['pct_change'] = self.dt['close'].pct_change()
+        #         calculating GAPS
+        GAP = pd.Series(np.nan, index=features.index)
+
+        OPENING = features.loc[pd.Timestamp('09:15:00').time()]['pct_change']
+        GAP.loc[OPENING.index] = np.where(OPENING > 0, 1, -1)
+        GAP = GAP.fillna(method='ffill')
 
         lag_values = pd.DataFrame()
         for col in features.columns:
@@ -196,9 +215,10 @@ class STRATEGY_REPO:
         #   normalization the features
         normalized_features = self.Normalization(features, normal_window)
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
+        normalized_features['GAP'] = GAP.loc[normalized_features.index]
         return normalized_features
 
-    def ZSCORE(self,lookback , rsi_p , normal_window, lags_range, dfactor, factor = None, atr_p = None):
+    def ZSCORE(self,lookback,rsi_p, normal_window, lags_range, dfactor,factor=None, atr_p=None):
         features = pd.DataFrame()
         #   conversion of variables
         lookback = int(lookback)
@@ -208,7 +228,7 @@ class STRATEGY_REPO:
         lags = int(lags_range)
 
         #   getting dynamic indicator values
-        v1, v2, v3, v4 = self.Dynamic_Indicator_ZSCORE( lookback, rsi_p, dfactor)
+        v1, v2, v3, v4 = self.Dynamic_Indicator_ZSCORE(lookback, rsi_p, dfactor)
         candle_range = self.dt['high'] - self.dt['low']
 
         features['mom_burst'] = v1
@@ -231,7 +251,7 @@ class STRATEGY_REPO:
         normalized_features['dayofweek'] = normalized_features.index.dayofweek
         return normalized_features
 
-    def MOM_BURST(self, lookback, normal_window, lags_range, dfactor , factor =None, atr_p = None):
+    def MOM_BURST(self, lookback,normal_window,lags_range,dfactor,factor=None, atr_p=None):
 
         features = pd.DataFrame()
 
@@ -266,11 +286,11 @@ class STRATEGY_REPO:
         normalized_features = self.Normalization(features, normal_window)
         return normalized_features
 
-    def Dynamic_Indicator_SharpeRev(self, window, rsi_p, dfactor):
+    def Dynamic_Indicator_SharpeRev(self, window,dfactor,normal_window):
         UP ,DN = self.get_quantile
 
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
-        vol = log_return.ewm(span=10).std()
+        vol = log_return.ewm(span=normal_window).std()
 
         # setting the window length dynamically
         WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
@@ -281,15 +301,7 @@ class STRATEGY_REPO:
         EMA_UP = self.dt['close'].ewm(span=WIN_UP).mean()
         EMA_DN = self.dt['close'].ewm(span=WIN_DN).mean()
 
-        #       calculating angle for lookback_1
-        WIN_UP_RSI = (rsi_p - dfactor) if (rsi_p - dfactor) >= 2 else rsi_p
-        WIN_DN_RSI = (rsi_p + dfactor) if (rsi_p + dfactor) >= 2 else rsi_p
-
-        rsi = ta.rsi(self.dt['close'], rsi_p)
-        RSI_UP = ta.rsi(self.dt['close'], WIN_UP_RSI)
-        RSI_DN = ta.rsi(self.dt['close'], WIN_DN_RSI)
-
-        #       calculating angle for lookback_2
+        # calculating angle for lookback_2
         spr = self.dt['close'].pct_change(window) / self.dt['close'].rolling(window=window).std()
         SPR_UP = self.dt['close'].pct_change(WIN_UP) / self.dt['close'].rolling(window=WIN_UP).std()
         SPR_DN = self.dt['close'].pct_change(WIN_DN) / self.dt['close'].rolling(window=WIN_DN).std()
@@ -298,39 +310,44 @@ class STRATEGY_REPO:
         ema[vol >= UP] = EMA_UP[vol >= UP]
         ema[vol <= DN] = EMA_DN[vol <= DN]
 
-        rsi[vol >= UP] = RSI_UP[vol >= UP]
-        rsi[vol <= DN] = RSI_DN[vol <= DN]
-
         spr[vol >= UP] = SPR_UP[vol >= UP]
         spr[vol <= DN] = SPR_DN[vol <= DN]
 
-        return ema, rsi, spr
+        return ema, spr
 
-    def Dynamic_Indicator_TREND_EMA(self, window, lookback_1, lookback_2, dfactor):
+    def Dynamic_Indicator_TREND_EMA(self, window, lookback_1,lookback_2,dfactor,normal_window,rsi_p):
         UP, DN = self.get_quantile
-
         log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
-        vol = log_return.ewm(span=10).std()
+        vol = log_return.ewm(span=normal_window).std()
 
         WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
         WIN_DN = (window + dfactor) if (window + dfactor) >= 2 else window
 
-        #       calculating ema
+        # setting the window length dynamically
+        RSI_WIN_UP = (rsi_p - dfactor) if (rsi_p - dfactor) >= 2 else rsi_p
+        RSI_WIN_DN = (rsi_p + dfactor) if (rsi_p + dfactor) >= 2 else rsi_p
+
+        # calculating ema
         ema = self.dt['close'].ewm(span=window).mean()
         EMA_UP = self.dt['close'].ewm(span=WIN_UP).mean()
         EMA_DN = self.dt['close'].ewm(span=WIN_DN).mean()
 
-        #       calculating angle for lookback_1
+        #  calculating rsi
+        rsi = ta.rsi(self.dt['close'], rsi_p)
+        RSI_UP = ta.rsi(self.dt['close'], RSI_WIN_UP)
+        RSI_DN = ta.rsi(self.dt['close'], RSI_WIN_DN)
+
+        # calculating angle for lookback_1
         angle_1 = line_angle(ema, lookback_1)
         ANG_UP_1 = line_angle(EMA_UP, lookback_1)
         ANG_DN_1 = line_angle(EMA_DN, lookback_1)
 
-        #       calculating angle for lookback_2
+        # calculating angle for lookback_2
         angle_2 = line_angle(ema, lookback_2)
         ANG_UP_2 = line_angle(EMA_UP, lookback_2)
         ANG_DN_2 = line_angle(EMA_DN, lookback_2)
 
-        #         setting dynamic indicator values
+        # setting dynamic indicator values
         ema[vol >= UP] = EMA_UP[vol >= UP]
         ema[vol <= DN] = EMA_DN[vol <= DN]
 
@@ -340,7 +357,10 @@ class STRATEGY_REPO:
         angle_2[vol >= UP] = ANG_UP_2[vol >= UP]
         angle_2[vol <= DN] = ANG_DN_2[vol <= DN]
 
-        return ema, angle_1, angle_2, vol
+        rsi[vol >= UP] = RSI_UP[vol >= UP]
+        rsi[vol <= DN] = RSI_DN[vol <= DN]
+
+        return ema, angle_1, angle_2,vol,rsi
 
     def Dynamic_Indicator_ZSCORE( self, window, rsi_p, dfactor):
         UP, DN = self.get_quantile
@@ -352,7 +372,7 @@ class STRATEGY_REPO:
         WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
         WIN_DN = (window + dfactor) if (window + dfactor) >= 2 else window
 
-        #       calculating dynamic value of mom burst
+        # calculating dynamic value of mom burst
         mom_burst, mean_range = calculate_MOM_Burst(self.dt, window)
         mom_burst_UP, mean_range_UP = calculate_MOM_Burst(self.dt, WIN_UP)
         mom_burst_DN, mean_range_DN = calculate_MOM_Burst(self.dt, WIN_DN)
@@ -406,10 +426,12 @@ class STRATEGY_REPO:
         window = param['atr_p']
         dfactor = param['dfactor']
 
+        vol_period = param['normal_window'] if (self.strategy_name == 'SharpeRev') or (self.strategy_name == 'TREND_EMA') else 10
+
         UP,DN = self.get_quantile
 
         log_return = np.log(self.dt['close']/self.dt['close'].shift(1))
-        vol = log_return.ewm(span = 10).std()
+        vol = log_return.ewm(span = vol_period).std()
 
 #       setting the window length dynamically
         WIN_UP = (window -dfactor) if (window -dfactor)>=2 else window
@@ -423,7 +445,7 @@ class STRATEGY_REPO:
 #       setting dynamic values
         atr[vol>=UP] = ATR_UP[vol>=UP]
 
-        if self.strategy_name!='MOM_BURST':
+        if self.strategy_name=='ZSCORE':
             atr[vol<=DN] = ATR_DN[vol<=DN]
 
         upper_bound = self.dt['close'] + (param['factor'] * atr)
@@ -431,9 +453,9 @@ class STRATEGY_REPO:
         return upper_bound,lower_bound
 
     def Set_Stops(self):
-            if self.position and not self.stops:
-                self.upper_bound,self.lower_bound = self.Dynamic_Stops()
-                self.stops = self.lower_bound.iloc[-1] if self.position > 0 else self.upper_bound.iloc[-1]
+        if self.position and not self.stops:
+            self.upper_bound,self.lower_bound = self.Dynamic_Stops()
+            self.stops = self.lower_bound.iloc[-1] if self.position > 0 else self.upper_bound.iloc[-1]
 
     def trailing_stops_candle_close(self):
         self.Set_Stops()
@@ -470,4 +492,3 @@ class STRATEGY_REPO:
                 signal.loc[signal.between_time(halt[0], halt[1]).index] = 0
 
         return signal
-
