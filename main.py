@@ -74,7 +74,7 @@ def connect():
 
         # selecting strategy which is selected with checkbox
         STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 30},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 10},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
                     'ZSCORE':{'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 30},
                     'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
                     }
