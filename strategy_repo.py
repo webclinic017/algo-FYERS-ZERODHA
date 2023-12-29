@@ -75,8 +75,6 @@ class STRATEGY_REPO:
             param = {'QLVL': 0.22381997538692983,'ema': 11,'lookback_1': 7,'lookback_2': 16,'atr_p': 4,'factor': 1.1650394838756581,'lags_trend': 5,'dfactor': -8,'rsi_p': 3,'normal_window': 6}
         elif self.strategy_name == 'SharpeRev':
             param = {'window': 4,'lookback': 2,'q_up': 1.0,'q_dn': 0.1,'normal_window': 141,'atr_p': 8,'factor': 1.75,'lags_sharpe': 8,'dfactor': -20,'QLVL': 0.95}
-        elif self.strategy_name == 'ZSCORE':
-            param = {'atr_p': 7.48244520895104, 'dfactor': 12.604043782251061, 'factor': 1.346960460205199, 'lags_range': 4.5207182858789725,  'lookback': 35.36604811044482, 'normal_window': 77.4371585817239, 'rsi_p': 3.9490513076367755}
         elif self.strategy_name == 'MOM_BURST':
             param = {'lookback': 2, 'normal_window': 182, 'atr_p': 8, 'factor': 1.665951088069996, 'lags_range': 1, 'dfactor': 5}
 
@@ -95,8 +93,8 @@ class STRATEGY_REPO:
             elif vol.iloc[-1] > self.quantile_UP[self.strategy_name].iloc[-1]:
                 self.model = self.model_2
         else:
-            self.quantile_UP = {'ZSCORE': 0.0025106634457647357,'MOM_BURST': 0.0019052022355813324}
-            self.quantile_DN = {'ZSCORE':0.001488458217788889,'MOM_BURST':0.0009401364610806288}
+            self.quantile_UP = {'MOM_BURST': 0.0019052022355813324}
+            self.quantile_DN = {'MOM_BURST':0.0009401364610806288}
 
         return self.quantile_UP[self.strategy_name],self.quantile_DN[self.strategy_name]
 
@@ -119,8 +117,6 @@ class STRATEGY_REPO:
                 features = self.TREND_EMA(**self.get_params)
             elif self.strategy_name == 'SharpeRev':
                 features = self.Sharpe_Rev(**self.get_params)
-            elif self.strategy_name == 'ZSCORE':
-                features = self.ZSCORE(**self.get_params)
             elif self.strategy_name == 'MOM_BURST':
                 features = self.MOM_BURST(**self.get_params)
 
@@ -218,38 +214,6 @@ class STRATEGY_REPO:
         normalized_features['GAP'] = GAP.loc[normalized_features.index]
         return normalized_features
 
-    def ZSCORE(self,lookback,rsi_p, normal_window, lags_range, dfactor,factor=None, atr_p=None):
-        features = pd.DataFrame()
-        #   conversion of variables
-        lookback = int(lookback)
-        rsi_p = int(rsi_p)
-        normal_window = int(normal_window)
-        dfactor = int(dfactor)
-        lags = int(lags_range)
-
-        #   getting dynamic indicator values
-        v1, v2, v3, v4 = self.Dynamic_Indicator_ZSCORE(lookback, rsi_p, dfactor)
-        candle_range = self.dt['high'] - self.dt['low']
-
-        features['mom_burst'] = v1
-        features['vol'] = v3
-        features['rsi_UP'] = v2 / 55
-        features['rsi_DN'] = 45 / v2
-        features['pct_change'] = self.dt['close'].pct_change()
-        features['range_mean_vs_candle_range'] = candle_range / v4
-
-        #   calculating lagged values
-        lag_values = pd.DataFrame()
-        for col in features.columns:
-            for lag in range(1, lags):
-                lag_values[f'{col}_{lag}'] = features[col].shift(lag)
-
-        features = pd.concat([features, lag_values], axis=1)
-
-        #   normalization the features
-        normalized_features = self.Normalization(features, normal_window)
-        normalized_features['dayofweek'] = normalized_features.index.dayofweek
-        return normalized_features
 
     def MOM_BURST(self, lookback,normal_window,lags_range,dfactor,factor=None, atr_p=None):
 
@@ -362,42 +326,6 @@ class STRATEGY_REPO:
 
         return ema, angle_1, angle_2,vol,rsi
 
-    def Dynamic_Indicator_ZSCORE( self, window, rsi_p, dfactor):
-        UP, DN = self.get_quantile
-
-        log_return = np.log(self.dt['close'] / self.dt['close'].shift(1))
-        vol = log_return.ewm(span=10).std()
-
-        # setting the window length dynamically
-        WIN_UP = (window - dfactor) if (window - dfactor) >= 2 else window
-        WIN_DN = (window + dfactor) if (window + dfactor) >= 2 else window
-
-        # calculating dynamic value of mom burst
-        mom_burst, mean_range = calculate_MOM_Burst(self.dt, window)
-        mom_burst_UP, mean_range_UP = calculate_MOM_Burst(self.dt, WIN_UP)
-        mom_burst_DN, mean_range_DN = calculate_MOM_Burst(self.dt, WIN_DN)
-
-        #       calculating dynamic window
-        WIN_UP_RSI = (rsi_p - dfactor) if (rsi_p - dfactor) >= 2 else rsi_p
-        WIN_DN_RSI = (rsi_p + dfactor) if (rsi_p + dfactor) >= 2 else rsi_p
-
-        #       calculating rsi indicator values
-        rsi = ta.rsi(self.dt['close'], rsi_p)
-        RSI_UP = ta.rsi(self.dt['close'], WIN_UP_RSI)
-        RSI_DN = ta.rsi(self.dt['close'], WIN_DN_RSI)
-
-        # setting dynamic indicator values
-        rsi[vol >= UP] = RSI_UP[vol >= UP]
-        rsi[vol <= DN] = RSI_DN[vol <= DN]
-
-        mom_burst[vol >= UP] = mom_burst_UP[vol >= UP]
-        mom_burst[vol <= DN] = mom_burst_DN[vol <= DN]
-
-        mean_range[vol >= UP] = mean_range_UP[vol >= UP]
-        mean_range[vol <= DN] = mean_range_DN[vol <= DN]
-
-        return mom_burst, rsi, vol, mean_range
-
     def Dynamic_Indicator_MOM_BURST(self,window, dfactor):
         UP, DN = self.get_quantile
 
@@ -445,9 +373,6 @@ class STRATEGY_REPO:
 #       setting dynamic values
         atr[vol>=UP] = ATR_UP[vol>=UP]
 
-        if self.strategy_name=='ZSCORE':
-            atr[vol<=DN] = ATR_DN[vol<=DN]
-
         upper_bound = self.dt['close'] + (param['factor'] * atr)
         lower_bound = self.dt['close'] - (param['factor'] * atr)
         return upper_bound,lower_bound
@@ -480,15 +405,3 @@ class STRATEGY_REPO:
 
         return hit
 
-    def trading_halts(self,  signal):
-        if self.strategy_name == 'SharpeRev':
-            TRADE_HAULT = [("14:31:00", "15:16:00")]
-            for halt in TRADE_HAULT:
-                signal.loc[signal.between_time(halt[0], halt[1]).index] = 0
-
-        elif self.strategy_name == 'ZSCORE':
-            TRADE_HAULT = [("09:30:00", "10:59:00"), ("13:31:00", "14:30:00")]
-            for halt in TRADE_HAULT:
-                signal.loc[signal.between_time(halt[0], halt[1]).index] = 0
-
-        return signal
