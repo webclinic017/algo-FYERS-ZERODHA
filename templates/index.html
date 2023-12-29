@@ -146,14 +146,6 @@
          </tr>
 
         <tr>
-            <td id="strategy_ZSCORE">N/A</td>
-            <td id="status_ZSCORE">N/A</td>
-            <td id="position_ZSCORE">N/A</td>
-            <td id="mtm_ZSCORE">N/A</td>
-
-         </tr>
-
-        <tr>
             <td id="strategy_MOM_BURST">N/A</td>
             <td id="status_MOM_BURST">N/A</td>
             <td id="position_MOM_BURST">N/A</td>
@@ -172,10 +164,6 @@
 
       <label for="SharpeRev" >
         <input type="checkbox" name="SharpeRev" value="SharpeRev" id="SharpeRev"> SharpeRev
-      </label>
-
-      <label for=ZSCORE>
-        <input type="checkbox" name="ZSCORE" value="ZSCORE" id="ZSCORE"> ZSCORE
       </label>
 
       <label for=MOM_BURST>
@@ -220,7 +208,6 @@
         <select name="Square_off_strategy" id="Square_off_strategy">
             <option value="TREND_EMA">TREND_EMA</option>
             <option value="SharpeRev">SharpeRev</option>
-            <option value="ZSCORE">ZSCORE</option>
             <option value="MOM_BURST">MOM_BURST</option>
 
         </select>
@@ -244,12 +231,6 @@
             $('#status_SharpeRev').text(data['SharpeRev'].STATUS);
             $('#position_SharpeRev').text(data['SharpeRev'].POSITION);
             $('#mtm_SharpeRev').text(data['SharpeRev'].MTM);
-
-            $('#strategy_ZSCORE').text(data['ZSCORE'].STRATEGY_NAME);
-            $('#status_ZSCORE').text(data['ZSCORE'].STATUS);
-            $('#position_ZSCORE').text(data['ZSCORE'].POSITION);
-            $('#mtm_ZSCORE').text(data['ZSCORE'].MTM);
-
 
             $('#strategy_MOM_BURST').text(data['MOM_BURST'].STRATEGY_NAME);
             $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
@@ -305,7 +286,6 @@
 <!--    strategy selector-->
         const isTREND_EMASelected = document.querySelector('input[name="TREND_EMA"]').checked;
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
-        const isZSCORESelected = document.querySelector('input[name="ZSCORE"]').checked;
         const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
 
 <!--    expiry-->
@@ -317,7 +297,6 @@
         const STRATEGY_SELECTED = {
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
-            'ZSCORE':isZSCORESelected,
             'MOM_BURST':isMOM_BURSTSelected,
         };
 
