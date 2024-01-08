@@ -17,6 +17,7 @@ class StrategyFactory(STRATEGY_REPO):
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
         # initializing the variables
         self.signal = 0
+        self.instrument = None
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
         OrderMng.LIVE_FEED = self.LIVE_FEED
@@ -28,16 +29,17 @@ class StrategyFactory(STRATEGY_REPO):
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
-        interval = self.strike_interval[self.symbol]
-        spot = self.LIVE_FEED.get_ltp(self.symbol)
-        strike = lambda: (round(spot / interval)) * interval
-        ATM = strike()
-        stk = ATM + interval * step
-        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
-        # appending into the list for future use
-        self.instrument_under_strategy.append(instrument)
+        if not self.instrument:
+            interval = self.strike_interval[self.symbol]
+            spot = self.LIVE_FEED.get_ltp(self.symbol)
+            strike = lambda: (round(spot / interval)) * interval
+            ATM = strike()
+            stk = ATM + interval * step
+            self.instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
+            # appending into the list for future use
+            self.instrument_under_strategy.append(self.instrument)
 
-        return instrument
+        return self.instrument
 
     def Open_position(self):
         if not self.instrument_under_strategy:
@@ -64,6 +66,7 @@ class StrategyFactory(STRATEGY_REPO):
 
             # once the order is placed , this function will be de-scheduled
             self.scheduler.clear()
+            self.instrument = None
 
 
     def on_tick(self):
@@ -126,7 +129,6 @@ class StrategyFactory(STRATEGY_REPO):
         self.OrderManger.refresh_variable()
         # symbol to unsubscribe
         self.instrument_under_strategy = []
-
 
 
 
