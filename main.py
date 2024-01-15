@@ -60,7 +60,7 @@ def connect():
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5,'NSE:NIFTYBANK-INDEX':5}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
@@ -71,11 +71,10 @@ def connect():
         StrategyFactory.LIVE_FEED = BROKER_APP
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
-
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 30},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': 15},
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '1h'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
                     }
 
         json = request.get_json()
@@ -123,6 +122,7 @@ def update_tick_data():
 
     return jsonify(updated_data)
 
+
 @app.route('/update_positions', methods=['GET'])
 def update_positions():
     json = {}
@@ -143,7 +143,6 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
-
 
     return jsonify(json)
 
@@ -199,6 +198,5 @@ def Sqaure_off_Position():
     return resp
 
 
-
-# if __name__ == '__main__':
-#     app.run()
+if __name__ == '__main__':
+    app.run()

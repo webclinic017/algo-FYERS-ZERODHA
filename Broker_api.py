@@ -43,7 +43,6 @@ class BROKER_API:
     def subscribe_spot(self):
         self.BROKER_APP.subscribe(self.get_idx_info)
 
-
     def BROKER_WEBSOCKET_INT(self):
 
         def socket_open():  # Socket open callback function
@@ -61,7 +60,7 @@ class BROKER_API:
             feed_message = json.loads(message)
             if 'lp' in feed_message:
                 self.ltp[self.token[str(feed_message['tk'])]] = float(feed_message['lp'])
-                
+
 
         self.BROKER_APP.start_websocket(socket_open_callback=socket_open, socket_close_callback=socket_close,
                               socket_error_callback=socket_error, subscription_callback=feed_data,

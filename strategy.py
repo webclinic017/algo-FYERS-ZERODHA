@@ -66,8 +66,8 @@ class StrategyFactory(STRATEGY_REPO):
             # once the order is placed , this function will be de-scheduled
             self.scheduler.clear()
             self.spot = 0
-            
-
+            if self.position:
+                self.trailing_stops_candle_close()
 
     def on_tick(self):
         if self.position:
@@ -81,12 +81,15 @@ class StrategyFactory(STRATEGY_REPO):
         if not self.position and self.trade_flag:
             self.signal = self.get_signal()
             if self.signal:
-                 self.scheduler.every(4).seconds.do(self.Open_position)
+                self.scheduler.every(4).seconds.do(self.Open_position)
 
-        print(f'Monitor signal : {datetime.now(self.time_zone)} : {self.strategy_name}:{self.signal}')
 
-        if self.position:
+        if self.position and self.is_valid_time_zone():
             self.trailing_stops_candle_close()
+            signal = self.verify_bar_since()
+            if signal and self.signal != self.position:
+                self.squaring_of_all_position_AT_ONCE()
+
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
@@ -108,7 +111,6 @@ class StrategyFactory(STRATEGY_REPO):
                     sorted(self.OrderManger.Transtype.items(),
                            key=lambda item: (item[1] == 'BUY', item[1] == 'SELL'))}
 
-
         # ensuring every position is squared off if not break the loop else set open position to zero
         for instrument in sequence.keys():
             if not self.OrderManger.close_position(instrument, abs(self.OrderManger.net_qty[instrument])):
@@ -125,16 +127,11 @@ class StrategyFactory(STRATEGY_REPO):
         # updating mtm after order placement
         self.STR_MTM = self.OrderManger.CumMtm
         self.signal = 0
-        self.stop = 0
+        self.stops = 0
+        self.entry_i = 0
         self.OrderManger.refresh_variable()
         # symbol to unsubscribe
         self.instrument_under_strategy = []
-
-
-
-
-
-
 
 
 

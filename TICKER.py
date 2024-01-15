@@ -10,12 +10,13 @@ class TICKER_:
 
     def __init__(self, ticker):
         self.update_freq = 5
-        self.request_retry = 5
+        self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
         self.ticker_space = {}
         self.update_tag = False
         self.last_execution = 0
+        self.last_historical_update = None
         self.hist_df = None
 
     def get_history(self, symbol, interval, days=100):
@@ -54,13 +55,18 @@ class TICKER_:
         return self.hist_df
 
     def run_update(self):
+        on_update = datetime.now(self.time_zone).replace(microsecond=0,second=0)
+        last_update = on_update if not self.last_historical_update else self.last_historical_update
 
-        for ticker,interval in self.ticker_under_strategy.items():
-            hist = self.get_history(ticker,interval)
-            print('Is_empty', hist.empty,interval)
-            if not hist.empty:
-                self.ticker_space[f"{ticker}"] = hist
+        if (last_update != on_update) or (not self.last_historical_update):
+            for ticker,interval in self.ticker_under_strategy.items():
+                hist = self.get_history(ticker,interval)
+                if not hist.empty:
+                    self.ticker_space[f"{ticker}"] = hist
 
+            self.last_historical_update = on_update
+
+    def monitor_strategy(self):
         for strategy in self.STRATEGY_RUN.keys():
             self.STRATEGY_RUN[strategy].monitor_signal()
 
@@ -69,11 +75,12 @@ class TICKER_:
         now = datetime.now(self.time_zone)
         if (now.minute % self.update_freq == 0) and (now.second > 5) and (now.second < 8):
             if (current_minute - self.last_execution) >= 300:
-                self.run_update()
+                self.monitor_strategy()
                 self.last_execution = current_minute
 
     def get_data(self,symbol,interval):
         try:
+            self.run_update()
             resample = self.ticker_space[symbol].resample(f'{interval}', origin='2017-01-02 09:15').agg(
                     {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
             return resample.iloc[:-1]
