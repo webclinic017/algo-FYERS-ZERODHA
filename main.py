@@ -198,5 +198,5 @@ def Sqaure_off_Position():
     return resp
 
 
-if __name__ == '__main__':
-    app.run()
+# if __name__ == '__main__':
+#     app.run()
