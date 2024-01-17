@@ -19,7 +19,6 @@ def getEncodedString(string):
 class HIST_BROKER_():
     def __init__(self):
         self.BROKER_APP = None
-        self.BROKER_SOCKET = None
         self.access_token = None
         self.client_id = None
         self.time_zone = pytz.timezone('Asia/kolkata')
@@ -75,7 +74,7 @@ class HIST_BROKER_():
         response = session.generate_token()
         self.access_token = response['access_token']
         self.BROKER_APP = fyersModel.FyersModel(client_id=self.client_id, is_async=False, token=self.access_token, log_path=os.getcwd())
-
+        return f"{self.client_id}:{self.access_token}"
 
     def delete_log(self):
         files = ['fyersApi.log','fyersDataSocket.log']

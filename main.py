@@ -28,8 +28,8 @@ def on_tick():
         if BROKER_APP:
             BROKER_APP.on_tick()
             time.sleep(1)
-    else:
-        BROKER_APP.stop_websocket()
+    # else:
+    #     BROKER_APP.stop_websocket()
 
 
 # creating flask web app
@@ -55,8 +55,8 @@ def connect():
         HIST_APP = HIST_BROKER_()
 
         # login to brokers and connecting websocket for datafeed
-        BROKER_APP.login()
-        HIST_APP.login()
+        ACCESS_TOKEN = HIST_APP.login()
+        BROKER_APP.ACCESS_TOKEN = ACCESS_TOKEN
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
@@ -66,15 +66,15 @@ def connect():
         BROKER_API.TICKER_OBJ = TICK
         TICKER_.LIVE_FEED = BROKER_APP
 
-        # setting and creating strategy obj
+        # setting and creating strategy obj-
         StrategyFactory.TICKER = TICK
         StrategyFactory.LIVE_FEED = BROKER_APP
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '1h'},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval':'5T'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '5T'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '5T'},
                     }
 
         json = request.get_json()
@@ -122,7 +122,6 @@ def update_tick_data():
 
     return jsonify(updated_data)
 
-
 @app.route('/update_positions', methods=['GET'])
 def update_positions():
     json = {}
@@ -143,6 +142,7 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
+
 
     return jsonify(json)
 
@@ -198,5 +198,6 @@ def Sqaure_off_Position():
     return resp
 
 
-# if __name__ == '__main__':
-#     app.run()
+
+if __name__ == '__main__':
+    app.run()

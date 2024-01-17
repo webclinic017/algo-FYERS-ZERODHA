@@ -25,8 +25,6 @@ class StrategyFactory(STRATEGY_REPO):
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
 
-
-
     def get_instrument(self, option_type, step):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
@@ -34,7 +32,7 @@ class StrategyFactory(STRATEGY_REPO):
         strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
+        instrument = f'NSE:{self.index}{self.expiry}{stk}{option_type}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
@@ -83,13 +81,11 @@ class StrategyFactory(STRATEGY_REPO):
             if self.signal:
                 self.scheduler.every(4).seconds.do(self.Open_position)
 
-
         if self.position and self.is_valid_time_zone():
             self.trailing_stops_candle_close()
             signal = self.verify_bar_since()
             if signal and self.signal != self.position:
                 self.squaring_of_all_position_AT_ONCE()
-
 
     def Exit_position_on_real_time(self):
         #   exit position on the live ltp basis on realtime
