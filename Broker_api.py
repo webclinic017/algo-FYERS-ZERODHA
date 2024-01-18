@@ -59,9 +59,9 @@ class BROKER_API:
         def feed_data(message):  # Socket feed data will receive in this callback function
             feed_message = json.loads(message)
             if 'lp' in feed_message:
-                print(f'\r ltp:{feed_message}', end='', flush=True)
                 self.ltp[self.token[str(feed_message['tk'])]] = float(feed_message['lp'])
-
+                # print(f'\r ltp:{self.ltp}', end='', flush=True)
+                
         self.BROKER_APP.start_websocket(socket_open_callback=socket_open, socket_close_callback=socket_close,
                               socket_error_callback=socket_error, subscription_callback=feed_data,
                               run_in_background=True, market_depth=False)
