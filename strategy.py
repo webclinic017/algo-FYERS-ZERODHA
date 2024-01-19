@@ -88,7 +88,7 @@ class StrategyFactory(STRATEGY_REPO):
         if self.position and self.is_valid_time_zone():
             self.trailing_stops_candle_close()
             signal = self.verify_bar_since()
-            if signal and self.signal != self.position:
+            if signal and signal != self.position:
                 self.squaring_of_all_position_AT_ONCE()
 
 
