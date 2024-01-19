@@ -73,7 +73,7 @@ class StrategyFactory(STRATEGY_REPO):
 
     def on_tick(self):
         if self.position:
-            self.STR_MTM = self.OrderManger.Live_MTM()
+            self.STR_MTM = round(self.OrderManger.Live_MTM(),2)
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
