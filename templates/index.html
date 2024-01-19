@@ -129,6 +129,7 @@
             <th>POSITION</th>
             <th>MTM</th>
         </tr>
+
         <tr>
             <td id="strategy_TREND_EMA">N/A</td>
             <td id="status_TREND_EMA">N/A</td>
@@ -153,8 +154,13 @@
 
          </tr>
 
-
     </table>
+      <table border="2">
+        <tr>
+            <th>Total MTM</th>
+            <td id="totalMTM">N/A</td>
+        </tr>
+      </table>
   </div>
   <div class="checkboxes">
     <h2>Select Strategy</h2>
@@ -236,7 +242,7 @@
             $('#status_MOM_BURST').text(data['MOM_BURST'].STATUS);
             $('#position_MOM_BURST').text(data['MOM_BURST'].POSITION);
             $('#mtm_MOM_BURST').text(data['MOM_BURST'].MTM);
-
+            $('#totalMTM').text(data['TOTAL'].TOTAL_MTM);
         });
     }
 
