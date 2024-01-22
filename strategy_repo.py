@@ -146,7 +146,9 @@ class STRATEGY_REPO:
             prediction = self.model_1.predict(self.normalized_features.values[-1].reshape(1,-1))
         else:
             prediction = self.model_2.predict(self.normalized_features.values[-1].reshape(1,-1))
-
+        line_ = f'Time:{datetime.now(self.time_zone)}-Index:{self.normalized_features.index[-1]}:signal:{prediction[0]}'
+        print(line_)
+        print(self.normalized_features.iloc[-1])
         return 1 if prediction[0] else -1
 
     def SharpeRev(self,lookback, q_dn,q_up,window, normal_window,lags_sharpe, QLVL,dfactor):
