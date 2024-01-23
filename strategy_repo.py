@@ -146,7 +146,7 @@ class STRATEGY_REPO:
             prediction = self.model_1.predict(self.normalized_features.values[-1].reshape(1,-1))
         else:
             prediction = self.model_2.predict(self.normalized_features.values[-1].reshape(1,-1))
-        line_ = f'Time:{datetime.now(self.time_zone)}-Index:{self.normalized_features.index[-1]}:signal:{prediction[0]}'
+        line_ = f'Time:{datetime.now(self.time_zone)}-Index:{self.normalized_features.index[-1]}:signal:{prediction[0]}{self.strategy_name}'
         print(line_)
         print(self.normalized_features.iloc[-1])
         return 1 if prediction[0] else -1
@@ -290,5 +290,6 @@ class STRATEGY_REPO:
         if self.entry_i == self.bar_since[self.strategy_name]:
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
+            print(f'BarVerification:{datetime.now(self.time_zone)}:{self.strategy_name}')
 
         return signal
