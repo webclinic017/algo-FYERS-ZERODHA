@@ -91,6 +91,8 @@ class STRATEGY_REPO:
         if self.is_valid_time_zone():
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
+            print(f'OnBarGetSignal:{datetime.now(self.time_zone)}:signal:{signal}:Index:{self.data.index[-1]}')
+
 
         return signal
 
@@ -329,5 +331,7 @@ class STRATEGY_REPO:
             self.data = self.TICKER.get_data(self.symbol, f'{self.interval}')
             signal = self.get_predictions()
             self.entry_i = 0
+            print(f'OnBarVerify:{datetime.now(self.time_zone)}:signal:{signal}:Index:{self.data.index[-1]}')
+
 
         return signal
