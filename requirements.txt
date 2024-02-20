@@ -13,4 +13,5 @@ pytz
 pya3
 xgboost==2.0.2
 scikit-learn==1.4.0
+hmmlearn==0.3.0
 
