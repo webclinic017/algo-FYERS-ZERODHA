@@ -60,8 +60,7 @@ class BROKER_API:
             feed_message = json.loads(message)
             if 'lp' in feed_message:
                 self.ltp[self.token[str(feed_message['tk'])]] = float(feed_message['lp'])
-                # print(f'\r ltp:{self.ltp}', end='', flush=True)
-                
+
         self.BROKER_APP.start_websocket(socket_open_callback=socket_open, socket_close_callback=socket_close,
                               socket_error_callback=socket_error, subscription_callback=feed_data,
                               run_in_background=True, market_depth=False)
@@ -90,13 +89,8 @@ class BROKER_API:
     def stop_websocket(self):
         self.BROKER_APP.stop_websocket()
 
-
-
     def on_tick(self):
 
-        if self.TICKER_OBJ:
-            self.TICKER_OBJ.run_scheduler()
-            #  monitoring strategy
         if self.STRATEGY_RUN:
             for key in self.STRATEGY_RUN.keys():
                 self.STRATEGY_RUN[key].on_tick()

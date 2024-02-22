@@ -60,7 +60,7 @@ def connect():
         BROKER_APP.BROKER_WEBSOCKET_INT()
 
         # TICKER and interval  used  in strategies
-        TICKER_UNDER_STRATEGY = {'NSE:NIFTY50-INDEX':5}
+        TICKER_UNDER_STRATEGY = {'NSE:NIFTYBANK-INDEX':'D','NSE:NIFTY50-INDEX':'D','NSE:ICICIBANK-EQ':'D', 'NSE:HDFCBANK-EQ':'D', 'NSE:AXISBANK-EQ':'D','NSE:SBIN-EQ':'D'}
         TICKER_.BROKER_OBJ = HIST_APP.BROKER_APP
         TICK = TICKER_(TICKER_UNDER_STRATEGY)
         BROKER_API.TICKER_OBJ = TICK
@@ -72,19 +72,20 @@ def connect():
         StrategyFactory.time_zone = pytz.timezone('Asia/Kolkata')
 
         # selecting strategy which is selected with checkbox
-        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '1h'},
-                    'SharpeRev': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
-                    'MOM_BURST': {'mode': 'Simulator', 'ticker': 'NSE:NIFTY50-INDEX', 'interval': '45T'},
+        TREND_EMA_components = ['NSE:NIFTY50-INDEX', 'NSE:ICICIBANK-EQ', 'NSE:HDFCBANK-EQ', 'NSE:AXISBANK-EQ','NSE:SBIN-EQ']
+
+        STRATEGY = {'TREND_EMA': {'mode': 'Simulator', 'ticker': 'NSE:NIFTYBANK-INDEX','Components':TREND_EMA_components, 'interval': 'D'},
+                    'SharpeRev': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX','Components': None,'interval': 'D'},
+                    'MOM_BURST': {'mode': 'Simulator', 'ticker':'NSE:NIFTYBANK-INDEX', 'Components':None,'interval': 'D'},
                     }
 
         json = request.get_json()
         SELECTED_STRATEGY = json['selected_strategy']
 
-
         for key,value in STRATEGY.items():
             if SELECTED_STRATEGY[key]:
                 STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-                value['ticker'], value['interval'],expiry=json['expiry'][value['ticker']])
+                value['ticker'],value['Components'],value['interval'],expiry=json['expiry'][value['ticker']])
 
         BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
         TICKER_.STRATEGY_RUN = STRATEGY_FAC
@@ -122,7 +123,6 @@ def update_tick_data():
 
     return jsonify(updated_data)
 
-
 @app.route('/update_positions', methods=['GET'])
 def update_positions():
     json = {}
@@ -143,7 +143,8 @@ def update_positions():
         'POSITION': f'OPEN:{POSITION}' if POSITION else 'CLOSED',
         'MTM': value,
         }
-    json['TOTAL'] = {'TOTAL_MTM':sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
+
+    json['TOTAL'] = {'TOTAL_MTM': sum([strategy.STR_MTM for strategy in STRATEGY_FAC.values()])}
     return jsonify(json)
 
 
@@ -198,5 +199,6 @@ def Sqaure_off_Position():
     return resp
 
 
-# if __name__ == '__main__':
-#     app.run()
+
+if __name__ == '__main__':
+    app.run()

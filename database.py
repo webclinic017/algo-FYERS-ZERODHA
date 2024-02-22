@@ -1,42 +1,36 @@
 import pandas as pd
 import requests
 from requests.exceptions import Timeout
-PositionBook = pd.DataFrame()
+
 
 def request_position():
-    global PositionBook
-    url = 'https://algotrade.pythonanywhere.com/get_position'
+    records = pd.DataFrame()
+    url = 'https://algotrade.pythonanywhere.com/get_position_Intraday'
     response = requests.get(url)
-    if response.json()!='no records found':
-       PositionBook = pd.DataFrame.from_records(response.json())
-       return PositionBook
+    if response.json() != 'no records':
+        records = pd.DataFrame.from_records(response.json())
+    return records
 
-def append_position(Date ,entrytime  ,exittime, Strategy , Transtype ,Instrument , ABP , ASP ,Qty , BuyValue , SellValue, MTM):
-    global PositionBook
-    trade_detail = {'Date': Date,
-            'entrytime':entrytime,
-            'exittime':exittime,
-            'Strategy': Strategy,
-            'Transtype': Transtype,
-            'Instrument': Instrument,
-            'ABP': ABP,
-            'ASP': ASP,
-            'Qty': Qty,
-            'AverageBuyValue':BuyValue,
-            'AverageSellValue':SellValue,
-            'MTM': MTM
-             }
+def UpdatePositionBook(Date, entrytime, exittime ,strategy_name, Transtype, Instrument, Signal, NetQty, NAV, POSITION):
+    url = 'https://algotrade.pythonanywhere.com/append_position_Intraday'
 
-    PositionBook = pd.DataFrame.from_dict([trade_detail])
+    # creating records
+    records = {'Date': Date, 'entrytime': entrytime, 'Strategy': strategy_name, 'Transtype': Transtype,
+               'Instrument': Instrument,'Signal': Signal, 'NetQty': NetQty,
+               'NAV':  NAV, 'POSITION': POSITION,'exittime':exittime}
 
-
-def post_position():
-    url = 'https://algotrade.pythonanywhere.com/append_position'
-    global PositionBook
-    payload = PositionBook.to_json(orient='records')
+    payload = pd.DataFrame.from_dict([records]).to_json(orient='records')
     try:
         response = requests.post(url, json=payload)
 
     except Timeout:
         print('Timeout:Unable to update the PositionBook Server , Server might be busy')
-        print(f'PositionNotUpdated:{PositionBook.iloc[-1]}')
+        print(f'PAYLOAD:{payload}')
+
+def GetOpenPosition(strategy):
+    records = pd.DataFrame()
+    Open_Pos = request_position()
+    if not Open_Pos.empty:
+        is_open = (Open_Pos['Strategy'] == strategy) & (Open_Pos['POSITION'] == 'OPEN')
+        records = Open_Pos.loc[is_open]
+    return records

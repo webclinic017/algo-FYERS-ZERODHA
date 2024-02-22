@@ -9,23 +9,30 @@ from strategy_repo import STRATEGY_REPO
 
 class StrategyFactory(STRATEGY_REPO):
 
-    def __init__(self, name, mode,symbol,interval,expiry):
-        super().__init__(name,symbol,interval)
+    def __init__(self, name, mode,symbol,Components,interval,expiry):
+        super().__init__(name,symbol,Components,interval)
         self.expiry = expiry
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
+        self.expiry_weekday = {'NSE:NIFTYBANK-INDEX':2, 'NSE:NIFTY50-INDEX': 3}
         # initializing the variables
         self.signal = 0
         self.spot = 0
+        self.overnight_flag = False
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
-        OrderMng.LIVE_FEED = self.LIVE_FEED
-        self.OrderManger = OrderMng(mode, name)
         self.instrument_under_strategy = []
         self.scheduler = schedule.Scheduler()
+        OrderMng.LIVE_FEED = self.LIVE_FEED
+        self.OrderManger = OrderMng(mode, name,self)
+        self.processed_flag = False
 
-
+    def Is_Valid_time(self):
+        valid_time = False
+        if datetime.now(self.time_zone).time()>datetime.strptime('09:15:00', "%H:%M:%S").time():
+            valid_time = True
+        return valid_time
 
     def get_instrument(self, option_type, step):
         # calculating option strike price
@@ -46,7 +53,7 @@ class StrategyFactory(STRATEGY_REPO):
             for key, value in OrderParam(self.strategy_name, self.signal).items():
                 instrument = self.get_instrument(value['opt'], value['step'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
-                                          'Qty': value['Qty']}
+                                          'Qty': value['Qty'],'signal':self.signal}
 
             # subscribing for instrument
             instrument_to_subscribe = [instrument for instrument in self.instrument_under_strategy if instrument not in self.LIVE_FEED.token.values()]
@@ -66,48 +73,39 @@ class StrategyFactory(STRATEGY_REPO):
             # once the order is placed , this function will be de-scheduled
             self.scheduler.clear()
             self.spot = 0
-            if self.position:
-                self.trailing_stops_candle_close()
+            self.instrument_under_strategy = []
         else:
             print(f'Socket is not Opened yet,re-iterating the function')
 
     def on_tick(self):
-        if self.position:
-            self.STR_MTM = round(self.OrderManger.Live_MTM(),2)
+        # updating the overnight position
+        if self.Is_Valid_time():
+            if not self.overnight_flag:
+                self.Validate_OvernightPosition()
+                if not self.scheduler.jobs:
+                    self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
+            else:
+                if not self.position and self.trade_flag and not self.processed_flag:
+                    self.signal = self.get_signal()
+                    if self.signal:
+                        self.scheduler.every(5).seconds.do(self.Open_position)
+                    self.processed_flag = True
+
+        self.STR_MTM = round(self.OrderManger.Live_MTM(),2) if self.position else round(self.OrderManger.CumMtm,2)
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
 
-    def monitor_signal(self):
-        # updating ticker space
-        if not self.position and self.trade_flag:
-            self.signal = self.get_signal()
-            if self.signal:
-                self.scheduler.every(7).seconds.do(self.Open_position)
-
-        if self.position and self.is_valid_time_zone():
-            self.trailing_stops_candle_close()
-            signal = self.verify_bar_since()
-            if signal and signal != self.position:
-                self.squaring_of_all_position_AT_ONCE()
-
-
     def Exit_position_on_real_time(self):
-        #   exit position on the live ltp basis on realtime
-        if self.trade_flag:
+        # if self.expiry_weekday[self.symbol] == datetime.now(self.time_zone).weekday():
+        if datetime.now(self.time_zone).time() > datetime.strptime('15:15:00', "%H:%M:%S").time():
             if self.position:
-                if self.monitor_stop_live():
-                    self.squaring_of_all_position_AT_ONCE()
-
-            if datetime.now(self.time_zone).time() >= datetime.strptime('15:15:00', "%H:%M:%S").time():
-                if self.position:
-                    self.squaring_of_all_position_AT_ONCE()
-                self.trade_flag = False
+                self.squaring_of_all_position_AT_ONCE()
+            self.trade_flag = False
 
     def squaring_of_all_position_AT_ONCE(self):
         success = False
         # function ensure instrument will SELL trans_type will be executed first then hedge position
-
         sequence = {k: v for k, v in
                     sorted(self.OrderManger.Transtype.items(),
                            key=lambda item: (item[1] == 'BUY', item[1] == 'SELL'))}
@@ -121,20 +119,12 @@ class StrategyFactory(STRATEGY_REPO):
                 success = True
 
         if success:
-            self.position = 0
-            self.refresh_var()
+            self.position = self.position if self.OrderManger.net_qty else 0
 
-    def refresh_var(self):
-        # updating mtm after order placement
-        self.STR_MTM = self.OrderManger.CumMtm
-        self.signal = 0
-        self.stops = 0
-        self.entry_i = 0
-        self.OrderManger.refresh_variable()
-        # symbol to unsubscribe
-        self.instrument_under_strategy = []
-
-
+    def Validate_OvernightPosition(self):
+        if self.position:
+            self.squaring_of_all_position_AT_ONCE()
+            self.overnight_flag = True
 
 
 

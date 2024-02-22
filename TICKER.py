@@ -9,7 +9,6 @@ class TICKER_:
     LIVE_FEED = None
 
     def __init__(self, ticker):
-        self.update_freq = 5
         self.request_retry = 3
         self.ticker_under_strategy = ticker
         self.time_zone = pytz.timezone('Asia/Kolkata')
@@ -19,7 +18,7 @@ class TICKER_:
         self.last_historical_update = None
         self.hist_df = None
 
-    def get_history(self, symbol, interval, days=100):
+    def get_history(self, symbol, interval, days=365):
 
         # reinitializing the variables
         his = []
@@ -65,18 +64,6 @@ class TICKER_:
                     self.ticker_space[f"{ticker}"] = hist
 
             self.last_historical_update = on_update
-
-    def monitor_strategy(self):
-        for strategy in self.STRATEGY_RUN.keys():
-            self.STRATEGY_RUN[strategy].monitor_signal()
-
-    def run_scheduler(self):
-        current_minute = int(time.time())
-        now = datetime.now(self.time_zone)
-        if (now.minute % self.update_freq == 0) and (now.second > 5) and (now.second < 8):
-            if (current_minute - self.last_execution) >= 300:
-                self.monitor_strategy()
-                self.last_execution = current_minute
 
     def get_data(self,symbol,interval):
         try:
