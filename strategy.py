@@ -5,7 +5,7 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
-
+from database import GetOpenPosition
 
 class StrategyFactory(STRATEGY_REPO):
 
@@ -15,10 +15,11 @@ class StrategyFactory(STRATEGY_REPO):
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
-        self.expiry_weekday = {'NSE:NIFTYBANK-INDEX':2, 'NSE:NIFTY50-INDEX': 3}
+
         # initializing the variables
         self.signal = 0
         self.spot = 0
+        self.target = 0
         self.overnight_flag = False
         self.trade_flag = True
         self.ticker_space = pd.DataFrame()
@@ -86,15 +87,20 @@ class StrategyFactory(STRATEGY_REPO):
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
                 if not self.position and self.trade_flag and not self.processed_flag:
-                    self.signal = -1*self.get_signal()
+                    self.signal = -1 * self.get_signal()
                     if self.signal:
                         self.scheduler.every(5).seconds.do(self.Open_position)
                     self.processed_flag = True
 
+        self.MonitorTrade()
         self.STR_MTM = round(self.OrderManger.Live_MTM(),2) if self.position else round(self.OrderManger.CumMtm,2)
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
+
+    def IsExpiry(self):
+        expiry = datetime.strptime(self.expiry, '%d%b%y')
+        return datetime.now(self.time_zone).date() == expiry.date()
 
     def Exit_position_on_real_time(self):
         # if self.expiry_weekday[self.symbol] == datetime.now(self.time_zone).weekday():
@@ -120,12 +126,18 @@ class StrategyFactory(STRATEGY_REPO):
 
         if success:
             self.position = self.position if self.OrderManger.net_qty else 0
+            self.target = 0 if not self.position else self.target
 
     def Validate_OvernightPosition(self):
         if self.position:
             self.squaring_of_all_position_AT_ONCE()
             self.overnight_flag = True
 
+    def MonitorTrade(self):
+        if self.position and not self.target:
+            OpenPos = GetOpenPosition(self.strategy_name)
+            max_loss = abs(OpenPos['NAV']).diff().iloc[-1]
+            self.target = 2.14 * abs(max_loss)
 
 
 

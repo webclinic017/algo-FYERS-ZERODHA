@@ -62,6 +62,11 @@ class OrderMng:
 
     def Live_MTM(self):
         mtm = sum([(self.LIVE_FEED.get_ltp(ins) * self.net_qty[ins]) - self.nav[ins] for ins in self.nav])
+        if self.StrategyFactory_Obj.target:
+            if mtm >= self.StrategyFactory_Obj.target:
+                self.StrategyFactory_Obj.squaring_of_all_position_AT_ONCE()
+                self.StrategyFactory_Obj.processed_flag = False
+
         return self.CumMtm+mtm
 
     def Add_position(self,Instrument,Transtype, Qty,signal):
