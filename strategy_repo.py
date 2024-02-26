@@ -67,7 +67,7 @@ class STRATEGY_REPO:
     def get_prediction(self):
         model_input = self.pca_1.transform(self.normalized_features.values[-1].reshape(1, -1))
         prediction = self.model_1.predict(model_input)
-        return prediction[0]
+        return prediction[-1]
 
     @property
     def get_params(self):
