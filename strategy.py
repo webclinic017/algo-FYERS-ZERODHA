@@ -5,14 +5,14 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
-from database import GetOpenPosition,get_expiry
+from database import GetOpenPosition,NSE_SESSION
 
 class StrategyFactory(STRATEGY_REPO):
 
     def __init__(self, name, mode,symbol,Components,interval):
         super().__init__(name,symbol,Components,interval)
-        self.current_expiry = None
         self.expiry = None
+        self.nse = NSE_SESSION()
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
@@ -85,7 +85,7 @@ class StrategyFactory(STRATEGY_REPO):
             if not self.overnight_flag:
                 self.Validate_OvernightPosition()
                 # getting expiry
-                self.expiry = get_expiry(self.index)
+                self.expiry = self.nse.GetExpiry(self.index)
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
@@ -103,7 +103,7 @@ class StrategyFactory(STRATEGY_REPO):
 
 
     def IsExpiry(self):
-        expiry = datetime.strptime(self.expiry, '%d%b%y')
+        expiry = datetime.strptime(self.expiry[0], '%d%b%y')
         return datetime.now(self.time_zone).date() == expiry.date()
 
     def Exit_position_on_real_time(self):
