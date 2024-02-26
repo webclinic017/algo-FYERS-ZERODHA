@@ -77,15 +77,10 @@
     }
     #connectionStatus{color:green;}
 
-    .expiry{
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      text-align:center;
-      margin-top:20px;
-      }
     .Square_off_strategy{
       font-family: 'Comic Sans MS', cursive, sans-serif;
       text-align:center;
-      padding:8px;
+      padding:65px;
     }
 
 
@@ -188,24 +183,6 @@
    <div class="download-button">
         <button onclick="downloadCSV()">Download CSV</button>
    </div>
-   <br>
-   <div class="expiry">
-    <span>
-        <label for="BankNifty_expiry">BANKNIFTY:</label>
-        <input type="text" id="BankNifty_expiry"  name=BankNifty_expiry placeholder="expiry">
-    </span>
-
-    <span>
-        <label for="Nifty50_expiry">NIFTY50:</label>
-        <input type="text" id="Nifty50_expiry"  name=Nifty50_expiry placeholder="expiry" >
-    </span>
-
-    <span>
-        <label for="FinNifty_expiry">FINNIFTY:</label>
-        <input type="text" id="FinNifty_expiry" name=FinNifty_expiry placeholder="expiry">
-    </span>
-   </div>
-  <br>
 
   <br>
   <div class="Square_off_strategy">
@@ -294,30 +271,19 @@
         const isSharpRevSelected = document.querySelector('input[name="SharpeRev"]').checked;
         const isMOM_BURSTSelected = document.querySelector('input[name="MOM_BURST"]').checked;
 
-<!--    expiry-->
-        const BANK_NIFTY_EXP = document.querySelector('input[name="BankNifty_expiry"]').value;
-        const NIFTY_EXP = document.querySelector('input[name="Nifty50_expiry"]').value;
-        const FIN_NIFTY_EXP = document.querySelector('input[name="FinNifty_expiry"]').value;
 
-        // Create the selected strategy and expiry objects
+        // Create the selected strategy
         const STRATEGY_SELECTED = {
             'TREND_EMA': isTREND_EMASelected,
             'SharpeRev': isSharpRevSelected,
             'MOM_BURST':isMOM_BURSTSelected,
         };
 
-        const EXPIRY = {
-            'NSE:NIFTYBANK-INDEX': BANK_NIFTY_EXP,
-            'NSE:NIFTY50-INDEX': NIFTY_EXP,
-            'NSE:FINNIFTY-INDEX': FIN_NIFTY_EXP
-        };
-
-        // Make a POST request to /on_connect with the selected_strategy and expiry
+        // Make a POST request to /on_connect with the selected_strategy
         fetch('/on_connect', {
             method: 'POST',
             body: JSON.stringify({
                 'selected_strategy': STRATEGY_SELECTED,
-                'expiry': EXPIRY
             }),  headers: {'Content-Type': 'application/json',},
         })
         .then(response => response.text())
