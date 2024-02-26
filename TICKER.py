@@ -68,9 +68,17 @@ class TICKER_:
     def get_data(self,symbol,interval):
         try:
             self.run_update()
-            resample = self.ticker_space[symbol].resample(f'{interval}', origin='2017-01-02 09:15').agg(
+            if interval == 'D':
+                today = datetime.now().date()
+                resample = self.ticker_space[symbol]
+                resample = resample.loc[resample.index.date != today]
+            else:
+                resample = self.ticker_space[symbol].resample(f'{interval}', origin='2017-01-02 09:15').agg(
                     {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}).dropna()
-            return resample.iloc[:-1]
+                resample.iloc[-1]
+
+            return resample
+
         except KeyError:
             return pd.DataFrame()
 
