@@ -5,14 +5,14 @@ from datetime import datetime
 
 def request_position():
     records = pd.DataFrame()
-    url = 'https://algotrade.pythonanywhere.com/get_position_Intraday'
+    url = 'https://algotrade.pythonanywhere.com/get_position'
     response = requests.get(url)
     if response.json() != 'no records':
         records = pd.DataFrame.from_records(response.json())
     return records
 
 def UpdatePositionBook(Date, entrytime, exittime ,strategy_name, Transtype, Instrument, Signal, NetQty, NAV, POSITION):
-    url = 'https://algotrade.pythonanywhere.com/append_position_Intraday'
+    url = 'https://algotrade.pythonanywhere.com/append_position'
 
     # creating records
     records = {'Date': Date, 'entrytime': entrytime, 'Strategy': strategy_name, 'Transtype': Transtype,
@@ -35,12 +35,11 @@ def GetOpenPosition(strategy):
         records = Open_Pos.loc[is_open]
     return records
 
-
 def get_expiry(Indices):
     input_format = "%d-%b-%Y"
     output_format = "%d%b%y"
     url = f'https://www.nseindia.com/api/option-chain-indices?symbol={Indices}'
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36' }
+    headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" }
     records = requests.get(url,headers=headers).json()['records']
     format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
     return format_exp
