@@ -85,7 +85,7 @@ def connect():
         for key,value in STRATEGY.items():
             if SELECTED_STRATEGY[key]:
                 STRATEGY_FAC[key] = StrategyFactory(key, value['mode'],
-                value['ticker'],value['Components'],value['interval'],expiry=json['expiry'][value['ticker']])
+                value['ticker'],value['Components'],value['interval'])
 
         BROKER_APP.STRATEGY_RUN = STRATEGY_FAC
         TICKER_.STRATEGY_RUN = STRATEGY_FAC

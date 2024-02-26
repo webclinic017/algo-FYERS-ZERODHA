@@ -5,13 +5,14 @@ from OrderParam import OrderParam
 import schedule
 from datetime import datetime
 from strategy_repo import STRATEGY_REPO
-from database import GetOpenPosition
+from database import GetOpenPosition,get_expiry
 
 class StrategyFactory(STRATEGY_REPO):
 
-    def __init__(self, name, mode,symbol,Components,interval,expiry):
+    def __init__(self, name, mode,symbol,Components,interval):
         super().__init__(name,symbol,Components,interval)
-        self.expiry = expiry
+        self.current_expiry = None
+        self.expiry = None
         self.index = 'NIFTY' if self.symbol == 'NSE:NIFTY50-INDEX' else (
             'BANKNIFTY' if symbol == 'NSE:NIFTYBANK-INDEX' else 'FINNIFTY')
         self.strike_interval = {'NSE:NIFTYBANK-INDEX': 100, 'NSE:NIFTY50-INDEX': 50, 'NSE:FINNIFTY-INDEX': 50}
@@ -35,14 +36,14 @@ class StrategyFactory(STRATEGY_REPO):
             valid_time = True
         return valid_time
 
-    def get_instrument(self, option_type, step):
+    def get_instrument(self, option_type, step, expiry_idx):
         # calculating option strike price
         interval = self.strike_interval[self.symbol]
         self.spot = self.LIVE_FEED.get_ltp(self.symbol) if not self.spot else self.spot
         strike = lambda: (round(self.spot / interval)) * interval
         ATM = strike()
         stk = ATM + interval * step
-        instrument = f'{self.index}{self.expiry}{option_type[0]}{stk}'
+        instrument = f'{self.index}{self.expiry[expiry_idx]}{option_type[0]}{stk}'
         # appending into the list for future use
         self.instrument_under_strategy.append(instrument)
 
@@ -52,7 +53,7 @@ class StrategyFactory(STRATEGY_REPO):
         if not self.instrument_under_strategy:
             self.param = {}
             for key, value in OrderParam(self.strategy_name, self.signal).items():
-                instrument = self.get_instrument(value['opt'], value['step'])
+                instrument = self.get_instrument(value['opt'], value['step'], value['expiry'])
                 self.param[instrument] = {'Instrument': instrument, 'Transtype': value['transtype'],
                                           'Qty': value['Qty'],'signal':self.signal}
 
@@ -83,6 +84,8 @@ class StrategyFactory(STRATEGY_REPO):
         if self.Is_Valid_time():
             if not self.overnight_flag:
                 self.Validate_OvernightPosition()
+                # getting expiry
+                self.expiry = get_expiry(self.index)
                 if not self.scheduler.jobs:
                     self.scheduler.every(5).seconds.do(self.OrderManger.Update_OpenPosition)
             else:
@@ -97,6 +100,7 @@ class StrategyFactory(STRATEGY_REPO):
         # checking the scheduled task
         self.scheduler.run_pending()
         self.Exit_position_on_real_time()
+
 
     def IsExpiry(self):
         expiry = datetime.strptime(self.expiry, '%d%b%y')
@@ -138,6 +142,7 @@ class StrategyFactory(STRATEGY_REPO):
             OpenPos = GetOpenPosition(self.strategy_name)
             max_loss = abs(OpenPos['NAV']).diff().iloc[-1]
             self.target = 2.14 * abs(max_loss)
+
 
 
 

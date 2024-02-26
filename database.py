@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 from requests.exceptions import Timeout
-
+from datetime import datetime
 
 def request_position():
     records = pd.DataFrame()
@@ -34,3 +34,13 @@ def GetOpenPosition(strategy):
         is_open = (Open_Pos['Strategy'] == strategy) & (Open_Pos['POSITION'] == 'OPEN')
         records = Open_Pos.loc[is_open]
     return records
+
+
+def get_expiry(Indices):
+    input_format = "%d-%b-%Y"
+    output_format = "%d%b%y"
+    url = f'https://www.nseindia.com/api/option-chain-indices?symbol={Indices}'
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36' }
+    records = requests.get(url,headers=headers).json()['records']
+    format_exp = [datetime.strptime(date, input_format).strftime(output_format).upper() for date in records['expiryDates']]
+    return format_exp
